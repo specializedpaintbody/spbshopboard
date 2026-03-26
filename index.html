@@ -340,7 +340,7 @@ function MobileCard({ v, onEdit, onDelete, onStatus, onNote }) {
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:17,fontWeight:900,color:"#fff",lineHeight:1.2 }}>{v.year} {v.make} {v.model}</div>
-              {v.customer&&<div style={{ fontSize:13,color:"#888",marginTop:2 }}>{v.customer}</div>}
+              {v.customer&&<div style={{ fontSize:14,color:"#fff",marginTop:2,fontWeight:700 }}>{v.customer}</div>}
               <ROStrip v={v}/>
             </div>
             <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,marginLeft:10 }}>
@@ -349,7 +349,7 @@ function MobileCard({ v, onEdit, onDelete, onStatus, onNote }) {
             </div>
           </div>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10 }}>
-            <span style={{ fontSize:12,color:"#666" }}>👤 {v.tech||"Unassigned"}</span>
+            <span style={{ fontSize:13,color:"#ccc",fontWeight:600 }}>👤 {v.tech||"Unassigned"}</span>
             {v.promiseDate&&<span style={{ fontSize:11,fontWeight:800,color:dc }}>{diff===0?"DUE TODAY":diff<0?`${Math.abs(diff)}d LATE`:`${diff}d left`}</span>}
           </div>
         </div>
@@ -406,11 +406,11 @@ function DesktopCard({ v, statuses, onEdit, onDelete, onStatus, onNote }) {
         </div>
       </div>
       <div style={{ fontSize:13,fontWeight:800,color:"#fff" }}>{v.year} {v.make} {v.model}</div>
-      {v.customer&&<div style={{ fontSize:12,color:"#bbb",marginTop:1,fontWeight:600 }}>{v.customer}</div>}
+      {v.customer&&<div style={{ fontSize:13,color:"#fff",marginTop:2,fontWeight:700 }}>{v.customer}</div>}
       <ROStrip v={v}/>
-      <div style={{ color:"#555",fontSize:10,marginTop:4 }}>👤 {v.tech||"Unassigned"}</div>
+      <div style={{ color:"#ccc",fontSize:12,fontWeight:600,marginTop:4 }}>👤 {v.tech||"Unassigned"}</div>
       <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap" }}>
-        {v.dateIn&&<span style={{ fontSize:9,color:"#555" }}>In: {v.dateIn}</span>}
+        {v.dateIn&&<span style={{ fontSize:11,color:"#bbb",fontWeight:600 }}>In: {v.dateIn}</span>}
         {v.promiseDate&&<span style={{ fontSize:9,color:dc,fontWeight:800 }}>Due:{v.promiseDate}{diff===0?" · TODAY":diff<0?` · ${Math.abs(diff)}d LATE`:diff<=2?` · ${diff}d`:""}</span>}
       </div>
       {v.parts&&v.parts!=="na"&&<div style={{ display:"flex",alignItems:"center",gap:5,marginTop:4 }}><span style={{ background:ps?.color,color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"2px 7px" }}>🔩 {ps?.label}</span>{v.partsNote&&<span style={{ fontSize:9,color:"#aaa" }}>{v.partsNote.split("\n")[0]}</span>}</div>}
@@ -683,9 +683,9 @@ function Dashboard({ vehicles, isMobile, onNavigate }) {
 
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
-function ChatView({ msgs, onSend, isMobile }) {
+function ChatView({ msgs, onSend, isMobile, currentUser }) {
   const [group,setGroup] = useState("all");
-  const [who,setWho]     = useState(ALL_TECHS[0]);
+  const who = currentUser || ALL_TECHS[0];
   const [text,setText]   = useState("");
   const bottomRef        = useRef(null);
   const grp = CHAT_GROUPS.find(g=>g.id===group);
@@ -750,25 +750,73 @@ function ChatView({ msgs, onSend, isMobile }) {
   );
 }
 
-// ── PIN SCREEN ────────────────────────────────────────────────────────────────
+// ── LOGIN SCREEN ──────────────────────────────────────────────────────────────
 const SHOP_PIN = "2024";
-function PinScreen({ onUnlock }) {
-  const [pin,setPin]   = useState("");
-  const [err,setErr]   = useState(false);
-  const check = (p) => {
-    if (p===SHOP_PIN) { localStorage.setItem("spb_pin_ok","1"); onUnlock(); }
+
+function LoginScreen({ onLogin }) {
+  const [step, setStep]   = useState("pin"); // "pin" | "profile"
+  const [pin, setPin]     = useState("");
+  const [err, setErr]     = useState(false);
+  const [name, setName]   = useState("");
+  const [custom, setCustom] = useState("");
+
+  const checkPin = (p) => {
+    if (p === SHOP_PIN) { setStep("profile"); }
     else { setErr(true); setPin(""); setTimeout(()=>setErr(false),1500); }
   };
   const press = d => {
     if (pin.length>=4) return;
     const next = pin+d;
     setPin(next);
-    if (next.length===4) setTimeout(()=>check(next),200);
+    if (next.length===4) setTimeout(()=>checkPin(next),200);
   };
+  const selectName = (n) => {
+    setName(n);
+    setCustom("");
+  };
+  const finish = () => {
+    const finalName = custom.trim() || name;
+    if (!finalName) return;
+    localStorage.setItem("spb_pin_ok","1");
+    localStorage.setItem("spb_user", finalName);
+    onLogin(finalName);
+  };
+
+  if (step === "profile") return (
+    <div style={{ background:"#111",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",padding:24 }}>
+      <img src={LOGO_SRC} alt="SPB" style={{ height:55,marginBottom:20,objectFit:"contain" }}/>
+      <div style={{ fontSize:16,fontWeight:900,color:"#fff",marginBottom:6 }}>Who are you?</div>
+      <div style={{ fontSize:13,color:"#666",marginBottom:28 }}>Select your name to continue</div>
+      <div style={{ display:"flex",flexDirection:"column",gap:10,width:"100%",maxWidth:340 }}>
+        {ALL_TECHS.map(t=>(
+          <button key={t} onClick={()=>selectName(t)}
+            style={{ background:name===t?"#4A90D9":"#1e1e1e",border:`2px solid ${name===t?"#4A90D9":"#2a2a2a"}`,
+              color:name===t?"#fff":"#ccc",borderRadius:12,padding:"14px 20px",
+              fontSize:15,fontWeight:700,cursor:"pointer",textAlign:"left",
+              display:"flex",alignItems:"center",gap:12,transition:"all .15s" }}>
+            <span style={{ fontSize:20 }}>{name===t?"✓":"👤"}</span>
+            {t}
+          </button>
+        ))}
+        <div style={{ marginTop:8,borderTop:"1px solid #222",paddingTop:16 }}>
+          <div style={{ fontSize:11,color:"#555",fontWeight:700,textTransform:"uppercase",letterSpacing:1,marginBottom:8 }}>Or type your name</div>
+          <input value={custom} onChange={e=>{setCustom(e.target.value);setName("");}}
+            placeholder="Type name here..."
+            style={{ width:"100%",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:10,color:"#eee",padding:"12px 14px",fontSize:14,outline:"none",boxSizing:"border-box" }}/>
+        </div>
+        <button onClick={finish} disabled={!name&&!custom.trim()}
+          style={{ background:name||custom.trim()?"#4A90D9":"#252525",border:"none",color:name||custom.trim()?"#fff":"#444",
+            borderRadius:12,padding:"16px",fontSize:16,fontWeight:900,cursor:name||custom.trim()?"pointer":"default",marginTop:8 }}>
+          Enter Shop Board →
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ background:"#111",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:0 }}>
       <img src={LOGO_SRC} alt="SPB" style={{ height:60,marginBottom:24,objectFit:"contain" }}/>
-      <div style={{ fontSize:13,color:"#555",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:32 }}>Enter Shop PIN</div>
+      <div style={{ fontSize:13,color:"#888",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:32 }}>Enter Shop PIN</div>
       <div style={{ display:"flex",gap:14,marginBottom:36 }}>
         {[0,1,2,3].map(i=>(
           <div key={i} style={{ width:18,height:18,borderRadius:"50%",background:i<pin.length?(err?"#E74C3C":"#4A90D9"):"#2a2a2a",border:`2px solid ${i<pin.length?(err?"#E74C3C":"#4A90D9"):"#333"}`,transition:"all .2s" }}/>
@@ -796,6 +844,7 @@ function App() {
   const { vehicles, loading, synced, saveOne, deleteOne } = useVehicles();
   const { msgs, send: sendMsg } = useMessages();
   const [unlocked, setUnlocked] = useState(!!localStorage.getItem("spb_pin_ok"));
+  const [currentUser, setCurrentUser] = useState(localStorage.getItem("spb_user")||"");
   const [modal,setModal]   = useState(null);
   const [tab,setTab]       = useState("dashboard");
   const [fTech,setFTech]   = useState("All");
@@ -833,7 +882,8 @@ function App() {
     else { setTab(t); setFPriority("All"); }
   };
 
-  if (!unlocked) return <PinScreen onUnlock={()=>setUnlocked(true)}/>;
+  const handleLogin = (name) => { setCurrentUser(name); setUnlocked(true); };
+  if (!unlocked || !currentUser) return <LoginScreen onLogin={handleLogin}/>;
   if (loading) return (
     <div style={{ background:"#111",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16 }}>
       <img src={LOGO_SRC} alt="SPB" style={{ height:50,objectFit:"contain" }}/>
@@ -878,7 +928,12 @@ function App() {
                 {totH>0&&<span style={{ color:"#E74C3C" }}>🔥{totH}</span>}
                 {totOD>0&&<span style={{ color:"#E74C3C" }}>⚠️{totOD}</span>}
               </div>
-              <SyncDot synced={synced} loading={loading}/>
+              <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+                <SyncDot synced={synced} loading={loading}/>
+                <span style={{ fontSize:10,color:"#4A90D9",fontWeight:700 }}>👤 {currentUser}</span>
+                <button onClick={()=>{localStorage.removeItem("spb_pin_ok");localStorage.removeItem("spb_user");setUnlocked(false);setCurrentUser("");}}
+                  style={{ background:"transparent",border:"none",color:"#555",fontSize:10,cursor:"pointer",fontWeight:700 }}>✕</button>
+              </div>
             </div>
           </div>
         </div>
@@ -897,7 +952,7 @@ function App() {
             :mV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
           {tab==="body"&&(bV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"#444",marginBottom:20 }}>No vehicles in Body Shop</div><button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
             :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
-          {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true}/>}
+          {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true} currentUser={currentUser}/>}
         </div>
         <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:9999,background:"#1a1a1a",borderTop:"2px solid #333",display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
           {[["dashboard","📊","Board"],["mech","⚙️","Mech"],["body","🔨","Body"],["chat","💬","Chat"]].map(([v,icon,label])=>(
@@ -929,6 +984,11 @@ function App() {
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:14 }}>
           <SyncDot synced={synced} loading={loading}/>
+          <div style={{ display:"flex",alignItems:"center",gap:8,background:"#1e1e1e",borderRadius:20,padding:"5px 12px" }}>
+            <span style={{ fontSize:12,color:"#4A90D9",fontWeight:700 }}>👤 {currentUser}</span>
+            <button onClick={()=>{localStorage.removeItem("spb_pin_ok");localStorage.removeItem("spb_user");setUnlocked(false);setCurrentUser("");}}
+              style={{ background:"transparent",border:"none",color:"#555",fontSize:11,cursor:"pointer",fontWeight:700 }} title="Switch user">✕</button>
+          </div>
           <button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontWeight:800,fontSize:13,cursor:"pointer" }}>+ Add Vehicle</button>
         </div>
       </div>
@@ -951,7 +1011,7 @@ function App() {
       </div>
       <div style={{ padding:"18px 20px" }}>
         {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={false} onNavigate={navigate}/>}
-        {tab==="chat"&&<div style={{ maxWidth:700,margin:"0 auto" }}><ChatView msgs={msgs} onSend={sendMsg} isMobile={false}/></div>}
+        {tab==="chat"&&<div style={{ maxWidth:700,margin:"0 auto" }}><ChatView msgs={msgs} onSend={sendMsg} isMobile={false} currentUser={currentUser}/></div>}
         {(tab==="mech"||tab==="all")&&(
           <div style={{ marginBottom:30 }}>
             {tab==="all"&&<div style={{ fontSize:9,fontWeight:900,letterSpacing:2.5,color:"#4A90D9",marginBottom:10,textTransform:"uppercase" }}>⚙️ Mech Shop</div>}
