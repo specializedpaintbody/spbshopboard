@@ -1,1 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#111111"/>
+<title>SPB Shop Board</title>
+<link rel="manifest" href="/manifest.json"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#111;color:#eee;font-family:'DM Sans','Segoe UI',sans-serif;overscroll-behavior:none;}
+input,select,textarea,button{font-family:inherit;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:#111;}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;">
+<div style="font-size:40px;">🔧</div>
+<div style="font-size:16px;font-weight:700;color:#fff;">SPB Shop Board</div>
+<div style="font-size:13px;color:#4A90D9;">Loading...</div>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabaseClient.js"></script>
+<script type="text/babel" data-presets="react">
 
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const SUPA_URL = "https://rtuprxxojriyejiiezyh.supabaseClient.co";
+const SUPA_KEY = "sb_publishable_FoNCNS5jFq3tcaeol6MhSw_dQm3Lxud";
+const supabaseClient = window.supabaseClient.createClient(SUPA_URL, SUPA_KEY);
+
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+const LOGO_SRC = "data:image/jpeg;base64,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";
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const { useState, useEffect, useRef, useCallback } = React;
+
+const MECH_STATUSES = [
+  { id:"write-up",      label:"Write‑Up",      color:"#4A90D9" },
+  { id:"diagnosis",     label:"Diagnosis",     color:"#9B59B6" },
+  { id:"waiting-parts", label:"Waiting Parts", color:"#E67E22" },
+  { id:"in-progress",   label:"In Progress",   color:"#2980B9" },
+  { id:"qc",            label:"QC / Review",   color:"#F1C40F" },
+  { id:"ready",         label:"Ready ✓",       color:"#2ECC71" },
+];
+const BODY_STATUSES = [
+  { id:"estimate",     label:"Estimate",       color:"#4A90D9" },
+  { id:"teardown",     label:"Teardown",       color:"#8E44AD" },
+  { id:"body-work",    label:"Body Work",      color:"#D35400" },
+  { id:"paint-prep",   label:"Paint Prep",     color:"#C0392B" },
+  { id:"paint",        label:"Paint",          color:"#E91E63" },
+  { id:"assembly",     label:"Assembly",       color:"#27AE60" },
+  { id:"detail-ready", label:"Detail / Ready", color:"#2ECC71" },
+];
+const MECH_TECHS = ["Phillip","Santos","Jesus"];
+const BODY_TECHS = ["Bodyman","Painter","Estimator"];
+const ALL_TECHS  = [...MECH_TECHS,...BODY_TECHS,"Receptionist","Sales / Office"];
+const PARTS_STATUSES = [
+  { id:"na",       label:"N/A",          color:"#444" },
+  { id:"needed",   label:"Parts Needed", color:"#E67E22" },
+  { id:"ordered",  label:"Ordered",      color:"#9B59B6" },
+  { id:"eta",      label:"ETA Set",      color:"#4A90D9" },
+  { id:"received", label:"Received ✓",   color:"#2ECC71" },
+];
+const PRIORITY = [
+  { id:"normal", label:"Normal",           color:"#444",    icon:"" },
+  { id:"high",   label:"High Priority",    color:"#E67E22", icon:"🔶" },
+  { id:"hot",    label:"HOT / Rush",       color:"#E74C3C", icon:"🔥" },
+  { id:"wait",   label:"Customer Waiting", color:"#9B59B6", icon:"⏳" },
+];
+const CHAT_GROUPS = [
+  { id:"all",    label:"📢 All Staff",  color:"#4A90D9", members:[...MECH_TECHS,...BODY_TECHS,"Receptionist","Sales / Office"] },
+  { id:"office", label:"🏢 Office",     color:"#9B59B6", members:["Receptionist","Sales / Office","Estimator"] },
+  { id:"mech",   label:"⚙️ Mech",      color:"#2980B9", members:[...MECH_TECHS] },
+  { id:"body",   label:"🔨 Body",       color:"#E91E63", members:[...BODY_TECHS] },
+];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const uid      = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
+const today    = () => new Date().toISOString().slice(0,10);
+const daysDiff = d => d ? Math.floor((new Date(d)-new Date())/86400000) : null;
+const daysIn   = d => d ? Math.floor((new Date()-new Date(d))/86400000) : null;
+const fmt      = n => "$"+Number(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+
+function useIsMobile() {
+  const [m,setM] = useState(window.innerWidth<768);
+  useEffect(()=>{const h=()=>setM(window.innerWidth<768);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  return m;
+}
+
+// ── SUPABASE HOOKS ────────────────────────────────────────────────────────────
+function useVehicles() {
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [synced, setSynced]     = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const { data, error } = await supabaseClient.from("vehicles").select("*");
+      if (error) throw error;
+      const vs = (data||[]).map(r => ({ id:r.id, ...r.data }));
+      setVehicles(vs);
+      setSynced(true);
+    } catch(e) {
+      console.error("Load error:", e);
+      // fallback to localStorage
+      try {
+        const s = localStorage.getItem("spb_vehicles");
+        if (s) setVehicles(JSON.parse(s));
+      } catch {}
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    load();
+    // Real-time subscription
+    const ch = supabaseClient.channel("vehicles-changes")
+      .on("postgres_changes", { event:"*", schema:"public", table:"vehicles" }, () => load())
+      .subscribe();
+    return () => supabaseClient.removeChannel(ch);
+  }, [load]);
+
+  const save = async (newVehicles) => {
+    setVehicles(newVehicles);
+    localStorage.setItem("spb_vehicles", JSON.stringify(newVehicles));
+    try {
+      // Upsert all
+      const rows = newVehicles.map(v => ({ id:v.id, data:v, updated_at:new Date().toISOString() }));
+      // Delete removed vehicles
+      const { data: existing } = await supabaseClient.from("vehicles").select("id");
+      const existingIds = (existing||[]).map(r=>r.id);
+      const newIds = newVehicles.map(v=>v.id);
+      const toDelete = existingIds.filter(id=>!newIds.includes(id));
+      if (toDelete.length) await supabaseClient.from("vehicles").delete().in("id", toDelete);
+      if (rows.length) await supabaseClient.from("vehicles").upsert(rows);
+      setSynced(true);
+    } catch(e) { console.error("Save error:", e); }
+  };
+
+  const saveOne = async (v) => {
+    const next = vehicles.find(x=>x.id===v.id)
+      ? vehicles.map(x=>x.id===v.id?v:x)
+      : [...vehicles, v];
+    setVehicles(next);
+    localStorage.setItem("spb_vehicles", JSON.stringify(next));
+    try {
+      await supabaseClient.from("vehicles").upsert({ id:v.id, data:v, updated_at:new Date().toISOString() });
+    } catch(e) { console.error("SaveOne error:", e); }
+  };
+
+  const deleteOne = async (id) => {
+    const next = vehicles.filter(v=>v.id!==id);
+    setVehicles(next);
+    localStorage.setItem("spb_vehicles", JSON.stringify(next));
+    try { await supabaseClient.from("vehicles").delete().eq("id", id); } catch(e) { console.error(e); }
+  };
+
+  return { vehicles, loading, synced, save, saveOne, deleteOne, reload:load };
+}
+
+function useMessages() {
+  const [msgs, setMsgs] = useState([]);
+
+  const load = useCallback(async () => {
+    try {
+      const { data } = await supabaseClient.from("messages").select("*").order("created_at", { ascending:true });
+      setMsgs((data||[]).map(r=>({ id:r.id, ...r.data })));
+    } catch(e) {
+      try { const s=localStorage.getItem("spb_msgs"); if(s) setMsgs(JSON.parse(s)); } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const ch = supabaseClient.channel("messages-changes")
+      .on("postgres_changes", { event:"INSERT", schema:"public", table:"messages" }, () => load())
+      .subscribe();
+    return () => supabaseClient.removeChannel(ch);
+  }, [load]);
+
+  const send = async (msg) => {
+    const next = [...msgs, msg];
+    setMsgs(next);
+    localStorage.setItem("spb_msgs", JSON.stringify(next));
+    try { await supabaseClient.from("messages").insert({ id:msg.id, data:msg }); } catch(e) { console.error(e); }
+  };
+
+  return { msgs, send };
+}
+
+// ── SYNC INDICATOR ────────────────────────────────────────────────────────────
+function SyncDot({ synced, loading }) {
+  const color = loading ? "#E67E22" : synced ? "#2ECC71" : "#E74C3C";
+  const label = loading ? "Syncing..." : synced ? "Live" : "Offline";
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+      <div style={{ width:8,height:8,borderRadius:"50%",background:color,
+        boxShadow:`0 0 6px ${color}`,animation:loading?"pulse 1s infinite":"none" }}/>
+      <span style={{ fontSize:10,color,fontWeight:700 }}>{label}</span>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
+    </div>
+  );
+}
+
+// ── RO STRIP ─────────────────────────────────────────────────────────────────
+function ROStrip({ v }) {
+  const tags = [
+    v.roMain && { label:"RO",   val:v.roMain, color:"#4A90D9" },
+    v.roMech && { label:"MECH", val:v.roMech, color:"#9B59B6" },
+    v.roBody && v.roBody!==v.roMain && { label:"BODY", val:v.roBody, color:"#E91E63" },
+    v.roQB   && { label:"QB",   val:v.roQB,   color:"#27AE60" },
+  ].filter(Boolean);
+  if (!tags.length && !v.isFleet) return null;
+  return (
+    <div style={{ display:"flex",flexWrap:"wrap",gap:4,marginTop:5 }}>
+      {v.isFleet && <span style={{ background:"#B8860B22",border:"1px solid #B8860B88",color:"#F0C040",borderRadius:4,fontSize:11,fontWeight:900,padding:"2px 7px" }}>★ FLEET{v.fleetNum?` #${v.fleetNum}`:""}</span>}
+      {tags.map(t=>(
+        <span key={t.label} style={{ display:"inline-flex",borderRadius:4,overflow:"hidden",fontSize:11,fontWeight:800 }}>
+          <span style={{ background:t.color+"33",color:t.color,padding:"2px 5px",borderLeft:`2px solid ${t.color}` }}>{t.label}</span>
+          <span style={{ background:"#2a2a2a",color:"#ddd",padding:"2px 7px" }}>{t.val}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ── SHEET (mobile bottom sheet) ───────────────────────────────────────────────
+function Sheet({ children, onClose, title }) {
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:200,display:"flex",flexDirection:"column",justifyContent:"flex-end" }}>
+      <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,0.75)" }} onClick={onClose}/>
+      <div style={{ position:"relative",background:"#1c1c1c",borderRadius:"20px 20px 0 0",maxHeight:"92vh",overflowY:"auto",paddingBottom:"env(safe-area-inset-bottom,16px)" }}>
+        <div style={{ display:"flex",justifyContent:"center",padding:"12px 0 4px" }}>
+          <div style={{ width:40,height:4,background:"#333",borderRadius:99 }}/>
+        </div>
+        {title && <div style={{ padding:"4px 20px 14px",fontSize:17,fontWeight:900,color:"#fff",borderBottom:"1px solid #2a2a2a",marginBottom:4 }}>{title}</div>}
+        <div style={{ padding:"12px 16px 20px" }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── STATUS PICKER ─────────────────────────────────────────────────────────────
+function StatusPicker({ statuses, current, onPick, onClose }) {
+  return (
+    <Sheet title="Change Status" onClose={onClose}>
+      <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+        {statuses.map(s=>(
+          <button key={s.id} onClick={()=>{onPick(s.id);onClose();}}
+            style={{ display:"flex",alignItems:"center",gap:12,background:current===s.id?s.color+"22":"#252525",border:`1px solid ${current===s.id?s.color:"#333"}`,borderRadius:12,padding:"14px 16px",cursor:"pointer" }}>
+            <div style={{ width:12,height:12,borderRadius:"50%",background:s.color,flexShrink:0 }}/>
+            <span style={{ fontSize:15,fontWeight:700,color:current===s.id?s.color:"#ccc" }}>{s.label}</span>
+            {current===s.id && <span style={{ marginLeft:"auto",color:s.color,fontSize:18 }}>✓</span>}
+          </button>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
+// ── QUICK NOTE ────────────────────────────────────────────────────────────────
+function QuickNote({ v, onSave, onClose }) {
+  const [note,setNote] = useState("");
+  const [who,setWho]   = useState(ALL_TECHS[0]);
+  const log = v.log||[];
+  const ts  = new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const append = () => {
+    const entry = { id:uid(), who, ts, text:note.trim() };
+    onSave([...log, entry]);
+    setNote("");
+  };
+  return (
+    <Sheet title={"💬 Notes — "+v.year+" "+v.make+" "+v.model} onClose={onClose}>
+      <div style={{ fontSize:12,color:"#666",marginBottom:12 }}>
+        {v.customer&&<span style={{ color:"#aaa",fontWeight:700 }}>{v.customer} · </span>}
+        {v.roMain&&<span>RO #{v.roMain}</span>}
+      </div>
+      {log.length>0&&(
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:10,fontWeight:800,color:"#555",letterSpacing:1,textTransform:"uppercase",marginBottom:8 }}>🔒 Activity Log <span style={{ color:"#333",fontSize:9 }}>(read-only)</span></div>
+          <div style={{ background:"#141414",border:"1px solid #222",borderRadius:10,maxHeight:180,overflowY:"auto",padding:"4px 0" }}>
+            {log.map((e,i)=>(
+              <div key={e.id||i} style={{ padding:"8px 12px",borderBottom:i<log.length-1?"1px solid #1e1e1e":"none" }}>
+                <div style={{ display:"flex",gap:8,alignItems:"center",marginBottom:3 }}>
+                  <span style={{ fontSize:11,fontWeight:800,color:"#4A90D9" }}>{e.who}</span>
+                  <span style={{ fontSize:10,color:"#444" }}>· {e.ts}</span>
+                  <span style={{ marginLeft:"auto",fontSize:9,color:"#2a2a2a",background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:4,padding:"1px 5px" }}>🔒</span>
+                </div>
+                <div style={{ fontSize:13,color:"#ccc",lineHeight:1.5 }}>{e.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {log.length===0&&<div style={{ background:"#141414",border:"1px solid #222",borderRadius:10,padding:"14px",textAlign:"center",color:"#333",fontSize:12,marginBottom:16 }}>No activity yet</div>}
+      <div style={{ fontSize:10,fontWeight:800,color:"#555",letterSpacing:1,textTransform:"uppercase",marginBottom:6 }}>Who is leaving this note?</div>
+      <select value={who} onChange={e=>setWho(e.target.value)} style={{ width:"100%",background:"#2a2a2a",border:"1px solid #333",borderRadius:10,color:"#eee",padding:"12px 14px",fontSize:14,marginBottom:12,outline:"none" }}>
+        {ALL_TECHS.map(t=><option key={t}>{t}</option>)}
+      </select>
+      <textarea autoFocus value={note} onChange={e=>setNote(e.target.value)}
+        placeholder="e.g. Assign to Estimator — waiting on insurance approval..."
+        style={{ width:"100%",background:"#2a2a2a",border:"1px solid #4A90D966",borderRadius:10,color:"#eee",padding:"12px 14px",fontSize:15,height:90,resize:"none",outline:"none",boxSizing:"border-box",marginBottom:14,lineHeight:1.5 }}/>
+      <button onClick={append} disabled={!note.trim()} style={{ width:"100%",background:note.trim()?"#4A90D9":"#2a2a2a",border:"none",color:note.trim()?"#fff":"#444",borderRadius:12,padding:"15px",fontSize:16,fontWeight:900,cursor:note.trim()?"pointer":"default" }}>💬 Add Note</button>
+    </Sheet>
+  );
+}
+
+// ── MOBILE CARD ───────────────────────────────────────────────────────────────
+function MobileCard({ v, onEdit, onDelete, onStatus, onNote }) {
+  const statuses = v.shop==="mech"?MECH_STATUSES:BODY_STATUSES;
+  const st  = statuses.find(s=>s.id===v.status)||statuses[0];
+  const idx = statuses.findIndex(s=>s.id===v.status);
+  const pri = PRIORITY.find(p=>p.id===v.priority);
+  const ps  = PARTS_STATUSES.find(p=>p.id===v.parts);
+  const diff = daysDiff(v.promiseDate);
+  const dc   = diff===null?"#555":diff<0?"#E74C3C":diff===0?"#F1C40F":diff<=2?"#E67E22":"#2ECC71";
+  const [showSt,setShowSt]     = useState(false);
+  const [expanded,setExpanded] = useState(false);
+  const [showNote,setShowNote] = useState(false);
+
+  return (
+    <>
+      <div style={{ background:v.priority==="hot"?"#1f1010":v.priority==="wait"?"#140f1e":"#1e1e1e",borderRadius:16,marginBottom:10,overflow:"hidden",borderLeft:`5px solid ${st.color}`,boxShadow:"0 2px 12px rgba(0,0,0,0.3)" }}>
+        {v.priority!=="normal"&&<div style={{ background:pri.color+"22",borderBottom:`1px solid ${pri.color}33`,padding:"6px 14px",fontSize:11,fontWeight:900,color:pri.color }}>{pri.icon} {pri.label}</div>}
+        <div style={{ padding:"14px 14px 10px",cursor:"pointer" }} onClick={()=>setExpanded(e=>!e)}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:17,fontWeight:900,color:"#fff",lineHeight:1.2 }}>{v.year} {v.make} {v.model}</div>
+              {v.customer&&<div style={{ fontSize:13,color:"#888",marginTop:2 }}>{v.customer}</div>}
+              <ROStrip v={v}/>
+            </div>
+            <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,marginLeft:10 }}>
+              <span style={{ fontSize:10,fontWeight:900,borderRadius:20,padding:"4px 10px",color:"#fff",background:st.color,whiteSpace:"nowrap" }}>{st.label}</span>
+              <span style={{ fontSize:10,color:"#444" }}>{expanded?"▲":"▼"}</span>
+            </div>
+          </div>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10 }}>
+            <span style={{ fontSize:12,color:"#666" }}>👤 {v.tech||"Unassigned"}</span>
+            {v.promiseDate&&<span style={{ fontSize:11,fontWeight:800,color:dc }}>{diff===0?"DUE TODAY":diff<0?`${Math.abs(diff)}d LATE`:`${diff}d left`}</span>}
+          </div>
+        </div>
+        {expanded&&(
+          <div style={{ padding:"0 14px 12px",borderTop:"1px solid #282828" }}>
+            <div style={{ paddingTop:10,display:"flex",flexDirection:"column",gap:6 }}>
+              {v.dateIn&&<div style={{ fontSize:12,color:"#666" }}>📅 In: {v.dateIn}{daysIn(v.dateIn)!==null?` · ${daysIn(v.dateIn)} days ago`:""}</div>}
+              {v.promiseDate&&<div style={{ fontSize:12,color:dc,fontWeight:700 }}>🏁 Promise: {v.promiseDate}</div>}
+              {v.parts&&v.parts!=="na"&&<div style={{ display:"flex",alignItems:"center",gap:8 }}><span style={{ background:ps?.color,color:"#fff",borderRadius:20,fontSize:10,fontWeight:800,padding:"3px 10px" }}>🔩 {ps?.label}</span>{v.partsNote&&<span style={{ fontSize:11,color:"#666" }}>{v.partsNote.split("\n")[0]}</span>}</div>}
+              {v.notes&&<div style={{ background:"#181818",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#aaa",lineHeight:1.5 }}>{v.notes}</div>}
+              {(v.log||[]).length>0&&<div style={{ background:"#141414",border:"1px solid #222",borderRadius:8,padding:"4px 0" }}>
+                <div style={{ fontSize:9,fontWeight:800,color:"#444",padding:"4px 10px 6px",textTransform:"uppercase" }}>🔒 Activity Log</div>
+                {(v.log||[]).slice(-3).map((e,i)=><div key={e.id||i} style={{ padding:"6px 10px",borderTop:"1px solid #1e1e1e" }}><span style={{ fontSize:10,fontWeight:800,color:"#4A90D9" }}>{e.who}</span><span style={{ fontSize:9,color:"#444" }}> · {e.ts}</span><div style={{ fontSize:12,color:"#bbb",marginTop:2 }}>{e.text}</div></div>)}
+              </div>}
+            </div>
+            <div style={{ display:"flex",gap:8,marginTop:12 }}>
+              <button onClick={()=>setShowNote(true)} style={{ flex:1,background:"#1a2a3a",border:"1px solid #4A90D966",color:"#4A90D9",borderRadius:10,padding:"10px",fontSize:13,fontWeight:800,cursor:"pointer" }}>💬 Note</button>
+              <button onClick={onEdit} style={{ flex:1,background:"#252525",border:"1px solid #333",color:"#ccc",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer" }}>✏️ Edit</button>
+              <button onClick={()=>{if(confirm("Remove this vehicle?"))onDelete();}} style={{ background:"#2a1414",border:"1px solid #E74C3C44",color:"#E74C3C",borderRadius:10,padding:"10px 14px",fontSize:13,fontWeight:700,cursor:"pointer" }}>🗑️</button>
+            </div>
+          </div>
+        )}
+        <div style={{ display:"flex",borderTop:"1px solid #252525" }}>
+          <button disabled={idx===0} onClick={()=>onStatus(statuses[idx-1].id)} style={{ flex:1,background:"transparent",border:"none",color:idx===0?"#2a2a2a":"#888",padding:"12px",fontSize:16,cursor:idx===0?"default":"pointer",fontWeight:700 }}>‹</button>
+          <button onClick={()=>setShowSt(true)} style={{ flex:2,background:st.color+"22",border:"none",color:st.color,padding:"12px",fontSize:12,fontWeight:800,cursor:"pointer",borderLeft:"1px solid #252525",borderRight:"1px solid #252525" }}>{st.label} ▾</button>
+          <button disabled={idx===statuses.length-1} onClick={()=>onStatus(statuses[idx+1].id)} style={{ flex:1,background:"transparent",border:"none",color:idx===statuses.length-1?"#2a2a2a":"#888",padding:"12px",fontSize:16,cursor:idx===statuses.length-1?"default":"pointer",fontWeight:700 }}>›</button>
+        </div>
+      </div>
+      {showSt&&<StatusPicker statuses={statuses} current={v.status} onPick={s=>onStatus(s)} onClose={()=>setShowSt(false)}/>}
+      {showNote&&<QuickNote v={v} onSave={log=>{onNote(log);setShowNote(false);}} onClose={()=>setShowNote(false)}/>}
+    </>
+  );
+}
+
+// ── DESKTOP CARD ──────────────────────────────────────────────────────────────
+function DesktopCard({ v, statuses, onEdit, onDelete, onStatus, onNote }) {
+  const st  = statuses.find(s=>s.id===v.status)||statuses[0];
+  const idx = statuses.findIndex(s=>s.id===v.status);
+  const pri = PRIORITY.find(p=>p.id===v.priority);
+  const ps  = PARTS_STATUSES.find(p=>p.id===v.parts);
+  const diff = daysDiff(v.promiseDate);
+  const dc   = diff===null?"#555":diff<0?"#E74C3C":diff===0?"#F1C40F":diff<=2?"#E67E22":"#2ECC71";
+  const [showNote,setShowNote] = useState(false);
+
+  return (
+    <div style={{ background:v.priority==="hot"?"#1f1010":v.priority==="wait"?"#140f1e":"#1e1e1e",borderRadius:10,padding:"9px 9px 8px",borderLeft:`4px solid ${st.color}` }}>
+      {v.priority!=="normal"&&<div style={{ background:pri.color+"22",border:`1px solid ${pri.color}44`,borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:900,color:pri.color,marginBottom:6 }}>{pri.icon} {pri.label}</div>}
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}>
+        <span style={{ fontSize:9,fontWeight:900,borderRadius:20,padding:"2px 8px",color:"#fff",background:st.color }}>{st.label}</span>
+        <div>
+          <button title="Note" style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:12,padding:"0 2px" }} onClick={()=>setShowNote(true)}>💬</button>
+          <button style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:12,padding:"0 2px" }} onClick={onEdit}>✏️</button>
+          <button style={{ background:"transparent",border:"none",cursor:"pointer",fontSize:12,padding:"0 2px" }} onClick={onDelete}>🗑️</button>
+        </div>
+      </div>
+      <div style={{ fontSize:13,fontWeight:800,color:"#fff" }}>{v.year} {v.make} {v.model}</div>
+      {v.customer&&<div style={{ fontSize:12,color:"#bbb",marginTop:1,fontWeight:600 }}>{v.customer}</div>}
+      <ROStrip v={v}/>
+      <div style={{ color:"#555",fontSize:10,marginTop:4 }}>👤 {v.tech||"Unassigned"}</div>
+      <div style={{ display:"flex",gap:8,marginTop:3,flexWrap:"wrap" }}>
+        {v.dateIn&&<span style={{ fontSize:9,color:"#555" }}>In: {v.dateIn}</span>}
+        {v.promiseDate&&<span style={{ fontSize:9,color:dc,fontWeight:800 }}>Due:{v.promiseDate}{diff===0?" · TODAY":diff<0?` · ${Math.abs(diff)}d LATE`:diff<=2?` · ${diff}d`:""}</span>}
+      </div>
+      {v.parts&&v.parts!=="na"&&<div style={{ display:"flex",alignItems:"center",gap:5,marginTop:4 }}><span style={{ background:ps?.color,color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"2px 7px" }}>🔩 {ps?.label}</span>{v.partsNote&&<span style={{ fontSize:9,color:"#aaa" }}>{v.partsNote.split("\n")[0]}</span>}</div>}
+      {v.notes&&<div style={{ marginTop:5,background:"#1e1e1e",borderRadius:4,padding:"5px 7px",fontSize:11,color:"#aaa",lineHeight:1.5,fontWeight:500 }}>{v.notes}</div>}
+      {(v.log||[]).length>0&&<div style={{ marginTop:5,background:"#141414",border:"1px solid #1e1e1e",borderRadius:4,padding:"4px 0" }}>
+        {(v.log||[]).slice(-2).map((e,i)=><div key={e.id||i} style={{ padding:"4px 7px",borderTop:i>0?"1px solid #1a1a1a":"none" }}><span style={{ fontSize:9,fontWeight:800,color:"#4A90D9" }}>{e.who}</span><span style={{ fontSize:9,color:"#444" }}> · {e.ts}: </span><span style={{ fontSize:10,color:"#bbb" }}>{e.text}</span><span style={{ fontSize:8,color:"#2a2a2a",marginLeft:4 }}>🔒</span></div>)}
+      </div>}
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8 }}>
+        <button style={{ background:"#252525",border:"none",color:"#777",borderRadius:4,padding:"3px 8px",fontSize:13,cursor:"pointer" }} disabled={idx===0} onClick={()=>onStatus(statuses[idx-1].id)}>‹</button>
+        <div style={{ display:"flex",gap:3 }}>
+          {statuses.map((s,i)=><div key={s.id} title={s.label} style={{ width:i===idx?9:5,height:i===idx?9:5,borderRadius:"50%",background:i<idx?"#333":i===idx?st.color:"#222",border:i===idx?`2px solid ${st.color}`:"none",transition:"all .2s" }}/>)}
+        </div>
+        <button style={{ background:"#252525",border:"none",color:"#777",borderRadius:4,padding:"3px 8px",fontSize:13,cursor:"pointer" }} disabled={idx===statuses.length-1} onClick={()=>onStatus(statuses[idx+1].id)}>›</button>
+      </div>
+      {showNote&&<QuickNote v={v} onSave={log=>{onNote(log);setShowNote(false);}} onClose={()=>setShowNote(false)}/>}
+    </div>
+  );
+}
+
+
+// ── VEHICLE FORM ──────────────────────────────────────────────────────────────
+function VehicleForm({ initial, onSave, onClose, isMobile }) {
+  const blank = { shop:"mech",customer:"",year:"",make:"",model:"",tech:MECH_TECHS[0],status:"write-up",priority:"normal",dateIn:today(),promiseDate:"",notes:"",parts:"na",partsNote:"",roMain:"",roMech:"",roBody:"",roQB:"",isFleet:false,fleetNum:"" };
+  const [f,setF] = useState(initial||blank);
+  const set = (k,v) => setF(p=>({...p,[k]:v}));
+  const statuses = f.shop==="mech"?MECH_STATUSES:BODY_STATUSES;
+  const techs    = f.shop==="mech"?MECH_TECHS:BODY_TECHS;
+  const changeShop = v => setF(p=>({...p,shop:v,status:v==="mech"?MECH_STATUSES[0].id:BODY_STATUSES[0].id,tech:v==="mech"?MECH_TECHS[0]:BODY_TECHS[0]}));
+  const inp = { width:"100%",background:"#2a2a2a",border:"1px solid #333",borderRadius:10,color:"#eee",padding:isMobile?"13px 14px":"9px 11px",fontSize:isMobile?16:13,boxSizing:"border-box",marginBottom:12,outline:"none",display:"block",WebkitAppearance:"none" };
+  const lbl = { display:"block",fontSize:11,fontWeight:800,color:"#555",letterSpacing:1,marginBottom:5,textTransform:"uppercase" };
+  const body = (
+    <div>
+      <div style={lbl}>Shop</div>
+      <div style={{ display:"flex",gap:8,marginBottom:14 }}>
+        {[["mech","⚙️ Mech"],["body","🔨 Body"]].map(([v,l])=>(
+          <button key={v} onClick={()=>changeShop(v)} style={{ flex:1,background:f.shop===v?"#4A90D9":"#2a2a2a",border:`1px solid ${f.shop===v?"#4A90D9":"#333"}`,color:f.shop===v?"#fff":"#666",borderRadius:10,padding:isMobile?"13px 0":"9px 0",fontSize:isMobile?15:13,fontWeight:800,cursor:"pointer" }}>{l}</button>
+        ))}
+      </div>
+      <div style={lbl}>Priority</div>
+      <div style={{ display:"flex",gap:6,marginBottom:14,flexWrap:"wrap" }}>
+        {PRIORITY.map(p=>(
+          <button key={p.id} onClick={()=>set("priority",p.id)} style={{ flex:1,minWidth:isMobile?"calc(50% - 3px)":100,background:f.priority===p.id?p.color:"#2a2a2a",border:`1px solid ${f.priority===p.id?p.color:"#333"}`,color:f.priority===p.id?"#fff":"#666",borderRadius:10,padding:isMobile?"12px 6px":"8px 4px",fontSize:isMobile?13:11,fontWeight:800,cursor:"pointer" }}>{p.icon} {p.label}</button>
+        ))}
+      </div>
+      <div style={lbl}>Customer Name</div>
+      <input style={inp} value={f.customer} onChange={e=>set("customer",e.target.value)} placeholder="John Wooten"/>
+      <div style={{ display:"flex",gap:8 }}>
+        <div style={{ flex:.8 }}><div style={lbl}>Year</div><input style={inp} value={f.year} onChange={e=>set("year",e.target.value)} placeholder="2013" inputMode="numeric"/></div>
+        <div style={{ flex:1.2 }}><div style={lbl}>Make</div><input style={inp} value={f.make} onChange={e=>set("make",e.target.value)} placeholder="Chevy"/></div>
+        <div style={{ flex:1.5 }}><div style={lbl}>Model</div><input style={inp} value={f.model} onChange={e=>set("model",e.target.value)} placeholder="Silverado"/></div>
+      </div>
+      <div style={{ background:"#181818",border:"1px solid #2a2a2a",borderRadius:12,padding:"14px",marginBottom:14 }}>
+        <div style={{ fontSize:11,fontWeight:900,color:"#4A90D9",letterSpacing:1.5,marginBottom:12,textTransform:"uppercase" }}>🔑 Reference Numbers</div>
+        <div style={lbl}>Main RO (Key Tag)</div>
+        <input style={{...inp,borderColor:"#4A90D966"}} value={f.roMain} onChange={e=>set("roMain",e.target.value)} placeholder="26005" inputMode="numeric"/>
+        <div style={{ display:"flex",gap:8 }}>
+          <div style={{ flex:1 }}><div style={lbl}>Mech RO</div><input style={{...inp,borderColor:"#9B59B666"}} value={f.roMech} onChange={e=>set("roMech",e.target.value)} placeholder="M2525"/></div>
+          <div style={{ flex:1 }}><div style={lbl}>Body RO</div><input style={{...inp,borderColor:"#E91E6366"}} value={f.roBody} onChange={e=>set("roBody",e.target.value)} placeholder="B1044"/></div>
+        </div>
+        <div style={{ display:"flex",gap:8 }}>
+          <div style={{ flex:1 }}><div style={lbl}>QuickBooks</div><input style={{...inp,borderColor:"#27AE6066"}} value={f.roQB} onChange={e=>set("roQB",e.target.value)} placeholder="SW2499"/></div>
+          <div style={{ flex:1 }}>
+            <label style={{ display:"flex",alignItems:"center",gap:8,marginBottom:6,cursor:"pointer" }}>
+              <input type="checkbox" checked={f.isFleet} onChange={e=>set("isFleet",e.target.checked)} style={{ accentColor:"#F0C040",width:18,height:18 }}/>
+              <span style={{ fontSize:12,fontWeight:800,color:f.isFleet?"#F0C040":"#666" }}>★ Fleet Account</span>
+            </label>
+            <input style={{...inp,borderColor:f.isFleet?"#F0C04066":"#2a2a2a",opacity:f.isFleet?1:0.4,marginBottom:0}} disabled={!f.isFleet} value={f.fleetNum} onChange={e=>set("fleetNum",e.target.value)} placeholder="Fleet #30"/>
+          </div>
+        </div>
+      </div>
+      <div style={{ display:"flex",gap:8 }}>
+        <div style={{ flex:1 }}><div style={lbl}>Date In</div><input type="date" style={inp} value={f.dateIn} onChange={e=>set("dateIn",e.target.value)}/></div>
+        <div style={{ flex:1 }}><div style={lbl}>Promise Date</div><input type="date" style={inp} value={f.promiseDate} onChange={e=>set("promiseDate",e.target.value)}/></div>
+      </div>
+      <div style={{ display:"flex",gap:8 }}>
+        <div style={{ flex:1 }}><div style={lbl}>Assigned To</div><select style={inp} value={f.tech} onChange={e=>set("tech",e.target.value)}>{techs.map(t=><option key={t}>{t}</option>)}</select></div>
+        <div style={{ flex:1 }}><div style={lbl}>Status</div><select style={inp} value={f.status} onChange={e=>set("status",e.target.value)}>{statuses.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select></div>
+      </div>
+      <div style={lbl}>Parts Status</div>
+      <div style={{ display:"flex",gap:5,marginBottom:10,flexWrap:"wrap" }}>
+        {PARTS_STATUSES.map(p=>(
+          <button key={p.id} onClick={()=>set("parts",p.id)} style={{ flex:1,minWidth:isMobile?"calc(50% - 3px)":70,background:f.parts===p.id?p.color:"#2a2a2a",border:`1px solid ${f.parts===p.id?p.color:"#333"}`,color:f.parts===p.id?"#fff":"#666",borderRadius:10,padding:isMobile?"11px 4px":"7px 4px",fontSize:isMobile?12:10,fontWeight:800,cursor:"pointer" }}>{p.label}</button>
+        ))}
+      </div>
+      {f.parts!=="na"&&<input style={inp} value={f.partsNote} onChange={e=>set("partsNote",e.target.value)} placeholder="Part name, vendor, ETA..."/>}
+      <div style={lbl}>Notes</div>
+      <textarea style={{...inp,height:70,resize:"vertical"}} value={f.notes} onChange={e=>set("notes",e.target.value)} placeholder="Insurance auth, supplements, etc."/>
+      <button onClick={()=>onSave(f)} style={{ width:"100%",background:"#4A90D9",border:"none",color:"#fff",borderRadius:12,padding:isMobile?"16px":"12px",fontSize:isMobile?17:14,fontWeight:900,cursor:"pointer",marginTop:4 }}>{initial?.id?"Save Changes":"Add Vehicle"}</button>
+      {!isMobile&&<button onClick={onClose} style={{ width:"100%",background:"transparent",border:"1px solid #333",color:"#666",borderRadius:12,padding:"10px",fontSize:13,cursor:"pointer",marginTop:8 }}>Cancel</button>}
+    </div>
+  );
+  if (isMobile) return <Sheet title={initial?.id?"Edit Vehicle":"Add Vehicle"} onClose={onClose}>{body}</Sheet>;
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200 }}>
+      <div style={{ background:"#1c1c1c",border:"1px solid #2a2a2a",borderRadius:16,padding:"24px",width:"min(95vw,540px)",maxHeight:"90vh",overflowY:"auto" }}>
+        <div style={{ fontSize:17,fontWeight:900,color:"#fff",marginBottom:18 }}>{initial?.id?"Edit Vehicle":"Add Vehicle"}</div>
+        {body}
+      </div>
+    </div>
+  );
+}
+
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard({ vehicles, isMobile, onNavigate }) {
+  const mech=vehicles.filter(v=>v.shop==="mech"), body=vehicles.filter(v=>v.shop==="body");
+  const hot=vehicles.filter(v=>v.priority==="hot"||v.priority==="wait");
+  const fleet=vehicles.filter(v=>v.isFleet);
+  const partsOut=vehicles.filter(v=>v.parts&&["needed","ordered","eta"].includes(v.parts));
+  const overdue=vehicles.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)<0);
+  const dueToday=vehicles.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)===0);
+  const techRows=ALL_TECHS.map(t=>({ tech:t,shop:MECH_TECHS.includes(t)?"mech":"body",all:vehicles.filter(v=>v.tech===t),hot:vehicles.filter(v=>v.tech===t&&(v.priority==="hot"||v.priority==="wait")).length,high:vehicles.filter(v=>v.tech===t&&v.priority==="high").length })).filter(r=>r.all.length>0);
+  const [selVehicle,setSelVehicle] = useState(null);
+
+  const Stat = ({label,val,color,sub,onClick}) => (
+    <div onClick={onClick}
+      onMouseEnter={e=>{if(onClick){e.currentTarget.style.background="#262626";e.currentTarget.style.transform="translateY(-2px)";}}}
+      onMouseLeave={e=>{if(onClick){e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.transform="translateY(0)";}}}
+      style={{ background:"#1a1a1a",borderRadius:14,padding:isMobile?"14px 12px":"18px 20px",flex:1,minWidth:isMobile?80:110,borderTop:`4px solid ${color}`,textAlign:"center",cursor:onClick?"pointer":"default",transition:"transform .15s,background .15s" }}>
+      <div style={{ fontSize:isMobile?28:36,fontWeight:900,color,lineHeight:1 }}>{val}</div>
+      <div style={{ fontSize:isMobile?11:13,color:"#ccc",fontWeight:800,marginTop:6,letterSpacing:0.5 }}>{label}</div>
+      {sub&&<div style={{ fontSize:10,color:"#777",marginTop:3 }}>{sub}</div>}
+      {onClick&&<div style={{ fontSize:10,color:color+"bb",marginTop:5,fontWeight:700 }}>TAP TO VIEW →</div>}
+    </div>
+  );
+
+  const tag = c => ({ fontSize:10,fontWeight:800,borderRadius:20,padding:"3px 9px",color:"#fff",background:c,whiteSpace:"nowrap",display:"inline-block" });
+
+  const VehicleDetailPopup = ({ v }) => {
+    const st=v.shop==="mech"?MECH_STATUSES.find(s=>s.id===v.status)||MECH_STATUSES[0]:BODY_STATUSES.find(s=>s.id===v.status)||BODY_STATUSES[0];
+    const diff=daysDiff(v.promiseDate);
+    const dc=diff===null?"#555":diff<0?"#E74C3C":diff===0?"#F1C40F":diff<=2?"#E67E22":"#2ECC71";
+    const ps=PARTS_STATUSES.find(p=>p.id===v.parts);
+    const inner=(
+      <div>
+        <div style={{ display:"flex",gap:8,marginBottom:14,flexWrap:"wrap" }}>
+          <span style={{ background:st.color,color:"#fff",borderRadius:20,fontSize:12,fontWeight:900,padding:"4px 12px" }}>{st.label}</span>
+          <span style={{ background:"#222",color:"#888",borderRadius:20,fontSize:12,fontWeight:700,padding:"4px 12px" }}>{v.shop==="mech"?"⚙️ Mech":"🔨 Body"}</span>
+          {v.isFleet&&<span style={{ background:"#B8860B22",border:"1px solid #B8860B88",color:"#F0C040",borderRadius:20,fontSize:12,fontWeight:900,padding:"4px 12px" }}>★ FLEET{v.fleetNum?` #${v.fleetNum}`:""}</span>}
+        </div>
+        <ROStrip v={v}/>
+        <div style={{ display:"flex",gap:10,marginTop:14,flexWrap:"wrap" }}>
+          {[[" 👤 Tech",v.tech||"—","#4A90D9"],[v.dateIn&&"📅 Date In",v.dateIn&&`${v.dateIn}${daysIn(v.dateIn)!==null?` (${daysIn(v.dateIn)}d ago)`:""}`,`#888`],[v.promiseDate&&"🏁 Promise",v.promiseDate,dc],[diff!==null&&"⏱",diff!==null&&(diff<0?`${Math.abs(diff)}d OVERDUE`:diff===0?"DUE TODAY":`${diff}d left`),dc]].filter(([l])=>l).map(([l,val,c])=>(
+            <div key={l} style={{ background:"#1e1e1e",borderRadius:10,padding:"10px 14px",flex:1,minWidth:120 }}>
+              <div style={{ fontSize:10,color:"#555",fontWeight:800,textTransform:"uppercase",marginBottom:4 }}>{l}</div>
+              <div style={{ fontSize:14,color:c,fontWeight:800 }}>{val}</div>
+            </div>
+          ))}
+        </div>
+        {v.parts&&v.parts!=="na"&&<div style={{ marginTop:14,background:"#1e1e1e",borderRadius:10,padding:"12px 14px" }}>
+          <div style={{ fontSize:10,color:"#555",fontWeight:800,textTransform:"uppercase",marginBottom:8 }}>🔩 Parts</div>
+          <span style={{ background:ps?.color,color:"#fff",borderRadius:20,fontSize:12,fontWeight:800,padding:"4px 12px" }}>{ps?.label}</span>
+          {v.partsNote&&v.partsNote.split("\n").filter(Boolean).map((p,i)=><div key={i} style={{ display:"flex",alignItems:"center",gap:8,marginTop:8,background:"#181818",borderRadius:8,padding:"8px 10px" }}><span>📦</span><span style={{ fontSize:13,color:"#eee" }}>{p}</span></div>)}
+        </div>}
+        {v.notes&&<div style={{ marginTop:14,background:"#1e1e1e",borderRadius:10,padding:"12px 14px" }}>
+          <div style={{ fontSize:10,color:"#555",fontWeight:800,textTransform:"uppercase",marginBottom:8 }}>📝 Notes</div>
+          <div style={{ fontSize:13,color:"#ccc",lineHeight:1.6,whiteSpace:"pre-wrap" }}>{v.notes}</div>
+        </div>}
+        {(v.log||[]).length>0&&<div style={{ marginTop:14,background:"#141414",border:"1px solid #222",borderRadius:10,padding:"4px 0" }}>
+          <div style={{ fontSize:10,color:"#555",fontWeight:800,textTransform:"uppercase",padding:"8px 14px 6px",letterSpacing:1 }}>🔒 Activity Log</div>
+          {(v.log||[]).map((e,i)=><div key={e.id||i} style={{ padding:"8px 14px",borderTop:"1px solid #1e1e1e" }}><span style={{ fontSize:11,fontWeight:800,color:"#4A90D9" }}>{e.who}</span><span style={{ fontSize:10,color:"#444" }}> · {e.ts}</span><div style={{ fontSize:13,color:"#ccc" }}>{e.text}</div></div>)}
+        </div>}
+      </div>
+    );
+    if (isMobile) return <Sheet title={`${v.year} ${v.make} ${v.model}`} onClose={()=>setSelVehicle(null)}>{v.customer&&<div style={{ fontSize:14,color:"#888",marginBottom:12 }}>{v.customer}</div>}{inner}</Sheet>;
+    return (
+      <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300 }} onClick={()=>setSelVehicle(null)}>
+        <div style={{ background:"#1c1c1c",border:"1px solid #2a2a2a",borderRadius:18,padding:28,width:"min(95vw,560px)",maxHeight:"88vh",overflowY:"auto" }} onClick={e=>e.stopPropagation()}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18 }}>
+            <div><div style={{ fontSize:20,fontWeight:900,color:"#fff" }}>{v.year} {v.make} {v.model}</div>{v.customer&&<div style={{ fontSize:14,color:"#888",marginTop:3 }}>{v.customer}</div>}</div>
+            <button onClick={()=>setSelVehicle(null)} style={{ background:"#2a2a2a",border:"none",color:"#888",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontSize:14 }}>✕ Close</button>
+          </div>
+          {inner}
+        </div>
+      </div>
+    );
+  };
+
+  const clickRow = { cursor:"pointer",borderRadius:8,transition:"background .15s",padding:"12px 8px",borderBottom:"1px solid #212121",display:"flex",alignItems:"flex-start",gap:10 };
+
+  return (
+    <div>
+      <div style={{ display:"flex",gap:10,marginBottom:20,flexWrap:"wrap" }}>
+        <Stat label="TOTAL VEHICLES" val={vehicles.length} color="#4A90D9" onClick={()=>onNavigate("all")}/>
+        <Stat label="MECH SHOP"      val={mech.length}     color="#4A90D9" onClick={()=>onNavigate("mech")}/>
+        <Stat label="BODY SHOP"      val={body.length}      color="#E91E63" onClick={()=>onNavigate("body")}/>
+        <Stat label="★ FLEET"        val={fleet.length}     color="#F0C040" onClick={()=>onNavigate("all")}/>
+        <Stat label="🔥 HOT/RUSH"    val={hot.length}       color="#E74C3C" onClick={()=>onNavigate("hot")}/>
+        <Stat label="PARTS OUT"      val={partsOut.length}  color="#E67E22"/>
+        <Stat label="OVERDUE"        val={overdue.length}   color={overdue.length>0?"#E74C3C":"#555"} sub={dueToday.length>0?`+${dueToday.length} due today`:""}/>
+      </div>
+
+      {/* Tech Workload */}
+      <div style={{ background:"#1a1a1a",borderRadius:14,padding:16,marginBottom:14 }}>
+        <div style={{ fontSize:13,fontWeight:900,color:"#ccc",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>👤 Tech Workload</div>
+        {techRows.length===0?<div style={{ color:"#333",fontSize:13 }}>No vehicles assigned</div>:techRows.map(r=>(
+          <div key={r.tech} style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid #1e1e1e" }}>
+            <div style={{ flex:1 }}><div style={{ fontSize:14,fontWeight:700,color:"#eee" }}>{r.tech}</div><div style={{ fontSize:10,color:"#555" }}>{r.shop==="mech"?"Mech":"Body"}</div></div>
+            <div style={{ display:"flex",gap:4 }}>
+              {r.hot>0&&<span style={tag("#E74C3C")}>🔥{r.hot}</span>}
+              {r.high>0&&<span style={tag("#E67E22")}>🔶{r.high}</span>}
+              <span style={tag("#2a2a2a")}>{r.all.length} cars</span>
+            </div>
+            <div style={{ width:50,height:5,background:"#222",borderRadius:3,overflow:"hidden" }}>
+              <div style={{ width:`${Math.min(100,r.all.length/5*100)}%`,height:"100%",background:r.hot>0?"#E74C3C":r.all.length>=4?"#E67E22":"#4A90D9",borderRadius:3 }}/>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Parts Tracker */}
+      <div style={{ background:"#1a1a1a",borderRadius:14,padding:16,marginBottom:14 }}>
+        <div style={{ fontSize:13,fontWeight:900,color:"#ccc",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>🔩 Parts Tracker</div>
+        {partsOut.length===0?<div style={{ color:"#333",fontSize:13 }}>No parts pending</div>:partsOut.map(v=>{
+          const ps=PARTS_STATUSES.find(p=>p.id===v.parts);
+          const pc=v.partsNote?v.partsNote.split("\n").filter(Boolean).length:0;
+          return <div key={v.id} onClick={()=>setSelVehicle(v)} onMouseEnter={e=>e.currentTarget.style.background="#212121"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={clickRow}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13,fontWeight:700,color:"#eee" }}>{v.year} {v.make} {v.model}</div>
+              {v.customer&&<div style={{ fontSize:12,color:"#888",marginTop:1 }}>{v.customer}</div>}
+              <ROStrip v={v}/>
+              <div style={{ fontSize:11,color:"#555",marginTop:3 }}>👤 {v.tech||"Unassigned"} · {v.shop==="mech"?"Mech":"Body"}</div>
+            </div>
+            <div style={{ textAlign:"right",flexShrink:0 }}>
+              <span style={tag(ps?.color)}>{ps?.label}</span>
+              {pc>0&&<div style={{ fontSize:12,color:"#F0C040",fontWeight:700,marginTop:5 }}>📦 {pc} part{pc>1?"s":""}</div>}
+              {v.dateIn&&<div style={{ fontSize:13,color:"#aaa",fontWeight:700,marginTop:4 }}>{daysIn(v.dateIn)} days in shop</div>}
+              <div style={{ fontSize:10,color:"#4A90D9",marginTop:4,fontWeight:700 }}>TAP →</div>
+            </div>
+          </div>;
+        })}
+      </div>
+
+      {/* Promise Dates */}
+      <div style={{ background:"#1a1a1a",borderRadius:14,padding:16,marginBottom:14 }}>
+        <div style={{ fontSize:13,fontWeight:900,color:"#ccc",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>📅 Promise Dates</div>
+        {vehicles.filter(v=>v.promiseDate).length===0?<div style={{ color:"#333",fontSize:13 }}>No promise dates set</div>:vehicles.filter(v=>v.promiseDate).sort((a,b)=>a.promiseDate.localeCompare(b.promiseDate)).map(v=>{
+          const diff=daysDiff(v.promiseDate);
+          const c=diff<0?"#E74C3C":diff===0?"#F1C40F":diff<=2?"#E67E22":"#2ECC71";
+          return <div key={v.id} onClick={()=>setSelVehicle(v)} onMouseEnter={e=>e.currentTarget.style.background="#212121"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={clickRow}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13,fontWeight:700,color:"#eee" }}>{v.customer} — {v.year} {v.make} {v.model}</div>
+              <ROStrip v={v}/>
+              <div style={{ fontSize:11,color:"#555",marginTop:3 }}>👤 {v.tech||"Unassigned"}</div>
+            </div>
+            <div style={{ textAlign:"right",flexShrink:0 }}>
+              <div style={{ fontSize:13,color:c,fontWeight:900 }}>{diff<0?`${Math.abs(diff)}d OVERDUE`:diff===0?"DUE TODAY":`${diff}d left`}</div>
+              <div style={{ fontSize:13,color:"#aaa",fontWeight:700,marginTop:3 }}>{v.promiseDate}</div>
+              <div style={{ fontSize:10,color:"#4A90D9",marginTop:4,fontWeight:700 }}>TAP →</div>
+            </div>
+          </div>;
+        })}
+      </div>
+
+      {/* Fleet */}
+      {fleet.length>0&&<div style={{ background:"#1a1a1a",borderRadius:14,padding:16,marginBottom:14 }}>
+        <div style={{ fontSize:13,fontWeight:900,color:"#ccc",letterSpacing:1,textTransform:"uppercase",marginBottom:12 }}>★ Fleet Accounts</div>
+        {fleet.map(v=>(
+          <div key={v.id} onClick={()=>setSelVehicle(v)} onMouseEnter={e=>e.currentTarget.style.background="#212121"} onMouseLeave={e=>e.currentTarget.style.background="transparent"} style={clickRow}>
+            <div style={{ flex:1 }}><div style={{ fontSize:13,fontWeight:700,color:"#eee" }}>{v.customer} — {v.year} {v.make} {v.model}</div><ROStrip v={v}/><div style={{ fontSize:11,color:"#555",marginTop:3 }}>👤 {v.tech||"Unassigned"}</div></div>
+            <div style={{ textAlign:"right" }}><span style={{ fontSize:13,color:"#F0C040",fontWeight:800 }}>{v.fleetNum?`#${v.fleetNum}`:"Fleet"}</span><div style={{ fontSize:10,color:"#4A90D9",marginTop:4,fontWeight:700 }}>TAP →</div></div>
+          </div>
+        ))}
+      </div>}
+
+      {selVehicle&&<VehicleDetailPopup v={selVehicle}/>}
+    </div>
+  );
+}
+
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function ChatView({ msgs, onSend, isMobile }) {
+  const [group,setGroup] = useState("all");
+  const [who,setWho]     = useState(ALL_TECHS[0]);
+  const [text,setText]   = useState("");
+  const bottomRef        = useRef(null);
+  const grp = CHAT_GROUPS.find(g=>g.id===group);
+  const filtered = msgs.filter(m=>m.group===group);
+
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:"smooth"}); },[filtered.length,group]);
+
+  const sendMsg = () => {
+    if (!text.trim()) return;
+    const ts = new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+    onSend({ id:uid(),group,who,text:text.trim(),ts,createdAt:Date.now() });
+    setText("");
+  };
+
+  return (
+    <div style={{ display:"flex",flexDirection:"column",height:isMobile?"calc(100vh - 145px)":"calc(100vh - 165px)" }}>
+      <div style={{ display:"flex",gap:6,paddingBottom:12,flexWrap:"wrap",flexShrink:0 }}>
+        {CHAT_GROUPS.map(g=>(
+          <button key={g.id} onClick={()=>setGroup(g.id)} style={{ background:group===g.id?g.color:"#1e1e1e",border:`1px solid ${group===g.id?g.color:"#2a2a2a"}`,color:group===g.id?"#fff":"#666",borderRadius:20,padding:"7px 14px",fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap" }}>{g.label}</button>
+        ))}
+      </div>
+      <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:12,background:"#1a1a1a",borderRadius:10,padding:"10px 14px",flexShrink:0 }}>
+        <span style={{ fontSize:12,color:"#555",fontWeight:700,whiteSpace:"nowrap" }}>I AM:</span>
+        <select value={who} onChange={e=>setWho(e.target.value)} style={{ flex:1,background:"#252525",border:"1px solid #333",borderRadius:8,color:"#eee",padding:"8px 10px",fontSize:13,outline:"none",WebkitAppearance:"none" }}>
+          {ALL_TECHS.map(t=><option key={t}>{t}</option>)}
+        </select>
+        <div style={{ width:10,height:10,borderRadius:"50%",background:grp.color,flexShrink:0 }}/>
+        <span style={{ fontSize:12,color:grp.color,fontWeight:800,whiteSpace:"nowrap" }}>{grp.label}</span>
+      </div>
+      <div style={{ flex:1,overflowY:"auto",padding:"4px 0",minHeight:0 }}>
+        {filtered.length===0?(
+          <div style={{ textAlign:"center",padding:"40px 20px" }}>
+            <div style={{ fontSize:32,marginBottom:10 }}>💬</div>
+            <div style={{ fontSize:14,color:"#333" }}>No messages yet in {grp.label}</div>
+          </div>
+        ):(
+          <>
+            {filtered.map((m,i)=>{
+              const isMe=m.who===who;
+              const showName=i===0||filtered[i-1]?.who!==m.who;
+              return (
+                <div key={m.id} style={{ display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start",marginBottom:4 }}>
+                  {showName&&<div style={{ fontSize:10,fontWeight:800,color:isMe?"#4A90D9":"#888",marginBottom:3,paddingLeft:isMe?0:12,paddingRight:isMe?12:0 }}>{m.who}</div>}
+                  <div style={{ maxWidth:"75%",display:"flex",flexDirection:"column",alignItems:isMe?"flex-end":"flex-start" }}>
+                    <div style={{ background:isMe?"#4A90D9":"#252525",color:"#fff",borderRadius:isMe?"18px 18px 4px 18px":"18px 18px 18px 4px",padding:"10px 14px",fontSize:14,lineHeight:1.5,boxShadow:"0 2px 8px rgba(0,0,0,0.3)" }}>{m.text}</div>
+                    <div style={{ fontSize:10,color:"#444",marginTop:3,paddingLeft:isMe?0:4,paddingRight:isMe?4:0 }}>{m.ts}</div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef}/>
+          </>
+        )}
+      </div>
+      <div style={{ display:"flex",gap:8,paddingTop:12,flexShrink:0,borderTop:"1px solid #1e1e1e" }}>
+        <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),sendMsg())}
+          placeholder={`Message ${grp.label}...`}
+          style={{ flex:1,background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:24,color:"#eee",padding:"12px 18px",fontSize:14,outline:"none" }}/>
+        <button onClick={sendMsg} disabled={!text.trim()} style={{ background:text.trim()?grp.color:"#1e1e1e",border:"none",borderRadius:"50%",width:46,height:46,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,cursor:text.trim()?"pointer":"default",boxShadow:text.trim()?`0 4px 14px ${grp.color}66`:"none",transition:"all .2s" }}>➤</button>
+      </div>
+    </div>
+  );
+}
+
+// ── PIN SCREEN ────────────────────────────────────────────────────────────────
+const SHOP_PIN = "2024";
+function PinScreen({ onUnlock }) {
+  const [pin,setPin]   = useState("");
+  const [err,setErr]   = useState(false);
+  const check = (p) => {
+    if (p===SHOP_PIN) { localStorage.setItem("spb_pin_ok","1"); onUnlock(); }
+    else { setErr(true); setPin(""); setTimeout(()=>setErr(false),1500); }
+  };
+  const press = d => {
+    if (pin.length>=4) return;
+    const next = pin+d;
+    setPin(next);
+    if (next.length===4) setTimeout(()=>check(next),200);
+  };
+  return (
+    <div style={{ background:"#111",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:0 }}>
+      <img src={LOGO_SRC} alt="SPB" style={{ height:60,marginBottom:24,objectFit:"contain" }}/>
+      <div style={{ fontSize:13,color:"#555",fontWeight:700,letterSpacing:2,textTransform:"uppercase",marginBottom:32 }}>Enter Shop PIN</div>
+      <div style={{ display:"flex",gap:14,marginBottom:36 }}>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{ width:18,height:18,borderRadius:"50%",background:i<pin.length?(err?"#E74C3C":"#4A90D9"):"#2a2a2a",border:`2px solid ${i<pin.length?(err?"#E74C3C":"#4A90D9"):"#333"}`,transition:"all .2s" }}/>
+        ))}
+      </div>
+      {err&&<div style={{ color:"#E74C3C",fontSize:13,fontWeight:700,marginBottom:16 }}>Incorrect PIN</div>}
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,72px)",gap:12 }}>
+        {[1,2,3,4,5,6,7,8,9,"",0,"⌫"].map((d,i)=>(
+          <button key={i} onClick={()=>d==="⌫"?setPin(p=>p.slice(0,-1)):d!==""&&press(String(d))}
+            style={{ width:72,height:72,borderRadius:"50%",background:d===""?"transparent":"#1e1e1e",border:d===""?"none":"1px solid #2a2a2a",color:"#fff",fontSize:d==="⌫"?22:24,fontWeight:700,cursor:d===""?"default":"pointer",transition:"background .15s" }}
+            onMouseEnter={e=>{if(d!=="")e.currentTarget.style.background="#2a2a2a";}}
+            onMouseLeave={e=>{if(d!=="")e.currentTarget.style.background="#1e1e1e";}}>
+            {d}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const isMobile = useIsMobile();
+  const { vehicles, loading, synced, saveOne, deleteOne } = useVehicles();
+  const { msgs, send: sendMsg } = useMessages();
+  const [unlocked, setUnlocked] = useState(!!localStorage.getItem("spb_pin_ok"));
+  const [modal,setModal]   = useState(null);
+  const [tab,setTab]       = useState("dashboard");
+  const [fTech,setFTech]   = useState("All");
+  const [fPriority,setFPriority] = useState("All");
+
+  const addOrUpdate = v => {
+    const full = { ...v, id:v.id||uid(), createdAt:v.createdAt||Date.now() };
+    saveOne(full);
+    setModal(null);
+  };
+  const del      = id => { if(confirm("Remove this vehicle?")) deleteOne(id); };
+  const onStatus = (id,st) => { const v=vehicles.find(x=>x.id===id); if(v) saveOne({...v,status:st}); };
+  const onNote   = (id,log) => { const v=vehicles.find(x=>x.id===id); if(v) saveOne({...v,log}); };
+
+  const sortedV = arr => [...arr].sort((a,b)=>{ const o={hot:0,wait:1,high:2,normal:3}; return (o[a.priority]||3)-(o[b.priority]||3); });
+  const filtered = shop => vehicles
+    .filter(v=>v.shop===shop)
+    .filter(v=>fTech==="All"||v.tech===fTech)
+    .filter(v=>fPriority==="All"||v.priority===fPriority||(fPriority==="hot"&&(v.priority==="hot"||v.priority==="wait")));
+
+  const mc = MECH_STATUSES.reduce((a,s)=>({...a,[s.id]:filtered("mech").filter(v=>v.status===s.id)}),{});
+  const bc = BODY_STATUSES.reduce((a,s)=>({...a,[s.id]:filtered("body").filter(v=>v.status===s.id)}),{});
+
+  const totM=vehicles.filter(v=>v.shop==="mech").length, totB=vehicles.filter(v=>v.shop==="body").length;
+  const totH=vehicles.filter(v=>v.priority==="hot"||v.priority==="wait").length;
+  const totOD=vehicles.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)<0).length;
+
+  const openAdd = () => {
+    const sh=tab==="body"?"body":"mech";
+    setModal({ shop:sh,customer:"",year:"",make:"",model:"",tech:sh==="mech"?MECH_TECHS[0]:BODY_TECHS[0],status:sh==="mech"?"write-up":"estimate",priority:"normal",dateIn:today(),promiseDate:"",notes:"",parts:"na",partsNote:"",roMain:"",roMech:"",roBody:"",roQB:"",isFleet:false,fleetNum:"" });
+  };
+
+  const navigate = t => {
+    if (t==="hot") { setTab("all"); setFPriority("hot"); }
+    else { setTab(t); setFPriority("All"); }
+  };
+
+  if (!unlocked) return <PinScreen onUnlock={()=>setUnlocked(true)}/>;
+  if (loading) return (
+    <div style={{ background:"#111",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16 }}>
+      <img src={LOGO_SRC} alt="SPB" style={{ height:50,objectFit:"contain" }}/>
+      <div style={{ fontSize:13,color:"#4A90D9",fontWeight:700 }}>Loading shop data...</div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
+    </div>
+  );
+
+  // DESKTOP KANBAN COLUMN
+  const KanbanCol = ({ s, shop }) => {
+    const vlist = sortedV(shop==="mech"?mc[s.id]||[]:bc[s.id]||[]);
+    const sts   = shop==="mech"?MECH_STATUSES:BODY_STATUSES;
+    return (
+      <div style={{ minWidth:vlist.length>4?430:205,maxWidth:vlist.length>4?490:220,background:"#171717",borderRadius:10,flexShrink:0,display:"flex",flexDirection:"column" }}>
+        <div style={{ padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`3px solid ${s.color}` }}>
+          <span style={{ color:s.color,fontWeight:800,fontSize:11 }}>{s.label}</span>
+          <span style={{ background:s.color,color:"#fff",borderRadius:20,padding:"1px 7px",fontSize:10,fontWeight:800 }}>{vlist.length}</span>
+        </div>
+        <div style={{ padding:8,display:"grid",gridTemplateColumns:vlist.length>4?"1fr 1fr":"1fr",gap:7,flex:1,minHeight:80,alignContent:"start" }}>
+          {vlist.length===0?<div style={{ color:"#282828",fontSize:11,textAlign:"center",padding:"18px 0",gridColumn:"1/-1" }}>—</div>
+          :vlist.map(v=><DesktopCard key={v.id} v={v} statuses={sts}
+            onEdit={()=>setModal(v)} onDelete={()=>del(v.id)}
+            onStatus={st=>onStatus(v.id,st)} onNote={log=>onNote(v.id,log)}/>)}
+        </div>
+      </div>
+    );
+  };
+
+  // ── MOBILE ────────────────────────────────────────────────────────────────
+  if (isMobile) {
+    const mV=sortedV(filtered("mech")), bV=sortedV(filtered("body"));
+    return (
+      <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#111",minHeight:"100vh",color:"#eee",paddingBottom:80 }}>
+        <div style={{ background:"#161616",borderBottom:"1px solid #1e1e1e",padding:"14px 16px 10px",paddingTop:"max(14px,env(safe-area-inset-top,14px))" }}>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+            <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+              <img src={LOGO_SRC} alt="SPB" style={{ height:32,objectFit:"contain" }}/>
+            </div>
+            <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2 }}>
+              <div style={{ fontSize:11,color:"#555",display:"flex",gap:8 }}>
+                <span>{totM} Mech · {totB} Body</span>
+                {totH>0&&<span style={{ color:"#E74C3C" }}>🔥{totH}</span>}
+                {totOD>0&&<span style={{ color:"#E74C3C" }}>⚠️{totOD}</span>}
+              </div>
+              <SyncDot synced={synced} loading={loading}/>
+            </div>
+          </div>
+        </div>
+        {(tab==="mech"||tab==="body")&&(
+          <div style={{ padding:"8px 14px",background:"#141414",borderBottom:"1px solid #1a1a1a",display:"flex",alignItems:"center",gap:8 }}>
+            <span style={{ fontSize:11,color:"#555",fontWeight:700 }}>TECH:</span>
+            <select style={{ background:"#1e1e1e",border:"1px solid #2a2a2a",color:"#ccc",borderRadius:8,padding:"6px 10px",fontSize:13,flex:1 }} value={fTech} onChange={e=>setFTech(e.target.value)}>
+              <option>All</option>
+              {(tab==="mech"?MECH_TECHS:BODY_TECHS).map(t=><option key={t}>{t}</option>)}
+            </select>
+          </div>
+        )}
+        <div style={{ padding:"14px 14px 0" }}>
+          {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={true} onNavigate={navigate}/>}
+          {tab==="mech"&&(mV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"#444",marginBottom:20 }}>No vehicles in Mech Shop</div><button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
+            :mV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
+          {tab==="body"&&(bV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"#444",marginBottom:20 }}>No vehicles in Body Shop</div><button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
+            :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
+          {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true}/>}
+        </div>
+        <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"#161616",borderTop:"1px solid #222",display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
+          {[["dashboard","📊","Board"],["mech","⚙️","Mech"],["body","🔨","Body"],["chat","💬","Chat"]].map(([v,icon,label])=>(
+            <button key={v} onClick={()=>setTab(v)} style={{ flex:1,background:"transparent",border:"none",color:tab===v?"#4A90D9":"#555",padding:"10px 0 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer" }}>
+              <span style={{ fontSize:20 }}>{icon}</span>
+              <span style={{ fontSize:10,fontWeight:700,color:tab===v?"#4A90D9":"#555" }}>{label}</span>
+            </button>
+          ))}
+          <button onClick={openAdd} style={{ flex:1,background:"transparent",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer",padding:"6px 0 8px" }}>
+            <div style={{ width:42,height:42,background:"#4A90D9",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,color:"#fff",boxShadow:"0 4px 16px #4A90D966",marginTop:-14 }}>+</div>
+            <span style={{ fontSize:10,fontWeight:700,color:"#4A90D9",marginTop:2 }}>Add</span>
+          </button>
+        </div>
+        {modal&&<VehicleForm isMobile={true} initial={modal.id?modal:null} onSave={addOrUpdate} onClose={()=>setModal(null)}/>}
+      </div>
+    );
+  }
+
+  // ── DESKTOP ────────────────────────────────────────────────────────────────
+  return (
+    <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#111",minHeight:"100vh",color:"#eee",paddingBottom:60 }}>
+      <div style={{ background:"#161616",borderBottom:"1px solid #1e1e1e",padding:"12px 20px",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:16 }}>
+          <img src={LOGO_SRC} alt="SPB" style={{ height:40,objectFit:"contain" }}/>
+          <div>
+            <div style={{ fontSize:15,fontWeight:900,color:"#fff" }}>Shop Production Board</div>
+            <div style={{ fontSize:11,color:"#555",marginTop:1 }}>{totM} Mech · {totB} Body · {totM+totB} Total{totH>0?` · 🔥 ${totH} Hot`:""}{totOD>0?` · ⚠️ ${totOD} Overdue`:""}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex",alignItems:"center",gap:14 }}>
+          <SyncDot synced={synced} loading={loading}/>
+          <button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontWeight:800,fontSize:13,cursor:"pointer" }}>+ Add Vehicle</button>
+        </div>
+      </div>
+      <div style={{ padding:"10px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #181818",background:"#141414" }}>
+        <div style={{ display:"flex",gap:6 }}>
+          {[["dashboard","📊 Dashboard"],["mech","⚙️ Mech"],["body","🔨 Body"],["all","📋 All"],["chat","💬 Team Chat"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setTab(v)} style={{ background:tab===v?"#222":"transparent",border:`1px solid ${tab===v?"#444":"#222"}`,color:tab===v?"#fff":"#666",borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer" }}>{l}</button>
+          ))}
+        </div>
+        {tab!=="dashboard"&&tab!=="chat"&&(
+          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+            <span style={{ fontSize:10,color:"#444",fontWeight:700 }}>TECH:</span>
+            <select style={{ background:"#1e1e1e",border:"1px solid #2a2a2a",color:"#ccc",borderRadius:6,padding:"4px 8px",fontSize:12 }} value={fTech} onChange={e=>setFTech(e.target.value)}>
+              <option>All</option>
+              {ALL_TECHS.map(t=><option key={t}>{t}</option>)}
+            </select>
+            {fPriority!=="All"&&<button onClick={()=>setFPriority("All")} style={{ background:"#E74C3C22",border:"1px solid #E74C3C66",color:"#E74C3C",borderRadius:6,padding:"5px 10px",fontSize:11,fontWeight:800,cursor:"pointer" }}>🔥 Hot Filter ✕</button>}
+          </div>
+        )}
+      </div>
+      <div style={{ padding:"18px 20px" }}>
+        {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={false} onNavigate={navigate}/>}
+        {tab==="chat"&&<div style={{ maxWidth:700,margin:"0 auto" }}><ChatView msgs={msgs} onSend={sendMsg} isMobile={false}/></div>}
+        {(tab==="mech"||tab==="all")&&(
+          <div style={{ marginBottom:30 }}>
+            {tab==="all"&&<div style={{ fontSize:9,fontWeight:900,letterSpacing:2.5,color:"#4A90D9",marginBottom:10,textTransform:"uppercase" }}>⚙️ Mech Shop</div>}
+            <div style={{ display:"flex",gap:10,overflowX:"auto",paddingBottom:10 }}>
+              {MECH_STATUSES.map(s=><KanbanCol key={s.id} s={s} shop="mech"/>)}
+            </div>
+          </div>
+        )}
+        {(tab==="body"||tab==="all")&&(
+          <div style={{ marginBottom:30 }}>
+            {tab==="all"&&<div style={{ fontSize:9,fontWeight:900,letterSpacing:2.5,color:"#E91E63",marginBottom:10,textTransform:"uppercase" }}>🔨 Body Shop</div>}
+            <div style={{ display:"flex",gap:10,overflowX:"auto",paddingBottom:10 }}>
+              {BODY_STATUSES.map(s=><KanbanCol key={s.id} s={s} shop="body"/>)}
+            </div>
+          </div>
+        )}
+      </div>
+      {modal&&<VehicleForm isMobile={false} initial={modal.id?modal:null} onSave={addOrUpdate} onClose={()=>setModal(null)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
