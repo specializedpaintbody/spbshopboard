@@ -499,12 +499,6 @@ function VehicleForm({ initial, onSave, onClose, isMobile }) {
       <div style={lbl}>Notes</div>
       <textarea style={{...inp,height:70,resize:"vertical"}} value={f.notes} onChange={e=>set("notes",e.target.value)} placeholder="Insurance auth, supplements, etc."/>
       <button onClick={()=>onSave(f)} style={{ width:"100%",background:"#4A90D9",border:"none",color:"#fff",borderRadius:12,padding:isMobile?"16px":"12px",fontSize:isMobile?17:14,fontWeight:900,cursor:"pointer",marginTop:4 }}>{initial?.id?"Save Changes":"Add Vehicle"}</button>
-      {initial?.id&&(
-        <button onClick={()=>{ if(confirm("Move this vehicle to Closed Files? This removes it from the active board.")) { onSave({...f,isClosed:true,closedAt:new Date().toISOString()}); } }}
-          style={{ width:"100%",background:"#2ECC7122",border:"2px solid #2ECC71",color:"#2ECC71",borderRadius:12,padding:isMobile?"14px":"10px",fontSize:isMobile?15:13,fontWeight:900,cursor:"pointer",marginTop:8 }}>
-          ✅ Close File — Move to Closed
-        </button>
-      )}
       {!isMobile&&<button onClick={onClose} style={{ width:"100%",background:"transparent",border:"1px solid #333",color:"#666",borderRadius:12,padding:"10px",fontSize:13,cursor:"pointer",marginTop:8 }}>Cancel</button>}
     </div>
   );
@@ -521,15 +515,14 @@ function VehicleForm({ initial, onSave, onClose, isMobile }) {
 
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ vehicles, isMobile, onNavigate, onImport }) {
-  const active=vehicles.filter(v=>!v.isClosed);
-  const mech=active.filter(v=>v.shop==="mech"), body=active.filter(v=>v.shop==="body");
-  const hot=active.filter(v=>v.priority==="hot"||v.priority==="wait");
-  const fleet=active.filter(v=>v.isFleet);
-  const partsOut=active.filter(v=>v.parts&&["needed","ordered","eta"].includes(v.parts));
-  const overdue=active.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)<0);
-  const dueToday=active.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)===0);
-  const techRows=ALL_TECHS.map(t=>({ tech:t,shop:MECH_TECHS.includes(t)?"mech":"body",all:active.filter(v=>v.tech===t),hot:active.filter(v=>v.tech===t&&(v.priority==="hot"||v.priority==="wait")).length,high:active.filter(v=>v.tech===t&&v.priority==="high").length })).filter(r=>r.all.length>0);
+function Dashboard({ vehicles, isMobile, onNavigate }) {
+  const mech=vehicles.filter(v=>v.shop==="mech"), body=vehicles.filter(v=>v.shop==="body");
+  const hot=vehicles.filter(v=>v.priority==="hot"||v.priority==="wait");
+  const fleet=vehicles.filter(v=>v.isFleet);
+  const partsOut=vehicles.filter(v=>v.parts&&["needed","ordered","eta"].includes(v.parts));
+  const overdue=vehicles.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)<0);
+  const dueToday=vehicles.filter(v=>v.promiseDate&&daysDiff(v.promiseDate)===0);
+  const techRows=ALL_TECHS.map(t=>({ tech:t,shop:MECH_TECHS.includes(t)?"mech":"body",all:vehicles.filter(v=>v.tech===t),hot:vehicles.filter(v=>v.tech===t&&(v.priority==="hot"||v.priority==="wait")).length,high:vehicles.filter(v=>v.tech===t&&v.priority==="high").length })).filter(r=>r.all.length>0);
   const [selVehicle,setSelVehicle] = useState(null);
 
   const Stat = ({label,val,color,sub,onClick}) => (
@@ -600,15 +593,6 @@ function Dashboard({ vehicles, isMobile, onNavigate, onImport }) {
 
   return (
     <div>
-      {vehicles.filter(v=>!v.isClosed).length===0&&(
-        <div style={{ background:"#1a2a1a",border:"1px solid #2ECC7144",borderRadius:14,padding:"16px 20px",marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12 }}>
-          <div>
-            <div style={{ fontSize:14,fontWeight:800,color:"#2ECC71" }}>📋 Import your vehicle list</div>
-            <div style={{ fontSize:12,color:"#888",marginTop:3 }}>Load vehicles from your Google Sheet to get started</div>
-          </div>
-          <button onClick={onImport} style={{ background:"#2ECC71",border:"none",color:"#111",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:900,cursor:"pointer" }}>Import from Sheet →</button>
-        </div>
-      )}
       <div style={{ display:"flex",gap:10,marginBottom:20,flexWrap:"wrap" }}>
         <Stat label="TOTAL VEHICLES" val={vehicles.length} color="#4A90D9" onClick={()=>onNavigate("all")}/>
         <Stat label="MECH SHOP"      val={mech.length}     color="#4A90D9" onClick={()=>onNavigate("mech")}/>
@@ -699,77 +683,6 @@ function Dashboard({ vehicles, isMobile, onNavigate, onImport }) {
 
 
 // ── CHAT ──────────────────────────────────────────────────────────────────────
-
-// ── CLOSED FILES ─────────────────────────────────────────────────────────────
-function ClosedFiles({ vehicles, onReopen, onDelete, isMobile }) {
-  const [search, setSearch] = useState("");
-  const filtered = vehicles.filter(v =>
-    !search || v.customer?.toLowerCase().includes(search.toLowerCase()) ||
-    v.make?.toLowerCase().includes(search.toLowerCase()) ||
-    v.model?.toLowerCase().includes(search.toLowerCase()) ||
-    v.roMain?.includes(search) || v.roMech?.includes(search)
-  ).sort((a,b)=>(b.closedAt||"").localeCompare(a.closedAt||""));
-
-  return (
-    <div>
-      <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:10 }}>
-        <div>
-          <div style={{ fontSize:16,fontWeight:900,color:"#fff" }}>✅ Closed Files</div>
-          <div style={{ fontSize:12,color:"#888",marginTop:2 }}>{vehicles.length} closed vehicle{vehicles.length!==1?"s":""}</div>
-        </div>
-        <input value={search} onChange={e=>setSearch(e.target.value)}
-          placeholder="Search by name, RO, vehicle..."
-          style={{ background:"#1e1e1e",border:"1px solid #2a2a2a",borderRadius:10,color:"#eee",padding:"10px 14px",fontSize:13,outline:"none",width:isMobile?"100%":280 }}/>
-      </div>
-      {filtered.length===0?(
-        <div style={{ textAlign:"center",padding:"60px 20px" }}>
-          <div style={{ fontSize:40,marginBottom:12 }}>📁</div>
-          <div style={{ fontSize:15,color:"#444" }}>{vehicles.length===0?"No closed files yet":"No results found"}</div>
-        </div>
-      ):(
-        <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
-          {filtered.map(v=>{
-            const closedDate = v.closedAt ? new Date(v.closedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "Unknown";
-            const daysOpen = v.dateIn && v.closedAt ? Math.floor((new Date(v.closedAt)-new Date(v.dateIn))/86400000) : null;
-            return (
-              <div key={v.id} style={{ background:"#1a1a1a",borderRadius:14,padding:"14px 16px",borderLeft:"4px solid #2ECC71" }}>
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10 }}>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:15,fontWeight:800,color:"#fff" }}>{v.year} {v.make} {v.model}</div>
-                    {v.customer&&<div style={{ fontSize:13,color:"#ccc",marginTop:2,fontWeight:600 }}>{v.customer}</div>}
-                    <div style={{ display:"flex",flexWrap:"wrap",gap:4,marginTop:6 }}>
-                      {v.roMain&&<span style={{ display:"inline-flex",borderRadius:4,overflow:"hidden",fontSize:10,fontWeight:800 }}><span style={{ background:"#4A90D333",color:"#4A90D9",padding:"1px 4px",borderLeft:"2px solid #4A90D9" }}>RO</span><span style={{ background:"#2a2a2a",color:"#ccc",padding:"1px 5px" }}>{v.roMain}</span></span>}
-                      {v.roMech&&<span style={{ display:"inline-flex",borderRadius:4,overflow:"hidden",fontSize:10,fontWeight:800 }}><span style={{ background:"#9B59B633",color:"#9B59B6",padding:"1px 4px",borderLeft:"2px solid #9B59B6" }}>MECH</span><span style={{ background:"#2a2a2a",color:"#ccc",padding:"1px 5px" }}>{v.roMech}</span></span>}
-                      {v.roQB&&<span style={{ display:"inline-flex",borderRadius:4,overflow:"hidden",fontSize:10,fontWeight:800 }}><span style={{ background:"#27AE6033",color:"#27AE60",padding:"1px 4px",borderLeft:"2px solid #27AE60" }}>QB</span><span style={{ background:"#2a2a2a",color:"#ccc",padding:"1px 5px" }}>{v.roQB}</span></span>}
-                    </div>
-                    <div style={{ fontSize:11,color:"#666",marginTop:6,display:"flex",gap:12,flexWrap:"wrap" }}>
-                      <span>👤 {v.tech||"—"}</span>
-                      <span>📅 Closed: {closedDate}</span>
-                      {daysOpen!==null&&<span>⏱ {daysOpen} days in shop</span>}
-                      {v.isFleet&&<span style={{ color:"#F0C040" }}>★ FLEET{v.fleetNum?` #${v.fleetNum}`:""}</span>}
-                    </div>
-                    {v.notes&&<div style={{ marginTop:8,background:"#141414",borderRadius:8,padding:"8px 10px",fontSize:12,color:"#aaa",lineHeight:1.5 }}>{v.notes}</div>}
-                  </div>
-                  <div style={{ display:"flex",flexDirection:"column",gap:8,flexShrink:0 }}>
-                    <button onClick={()=>{if(confirm("Reopen this vehicle and move back to active board?")) onReopen(v);}}
-                      style={{ background:"#4A90D922",border:"1px solid #4A90D966",color:"#4A90D9",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap" }}>
-                      ↩ Reopen
-                    </button>
-                    <button onClick={()=>{if(confirm("Permanently DELETE this record? This cannot be undone.")) onDelete(v);}}
-                      style={{ background:"#E74C3C22",border:"1px solid #E74C3C66",color:"#E74C3C",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:800,cursor:"pointer" }}>
-                      🗑 Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ChatView({ msgs, onSend, isMobile, currentUser }) {
   const [group,setGroup] = useState("all");
   const who = currentUser || ALL_TECHS[0];
@@ -779,32 +692,6 @@ function ChatView({ msgs, onSend, isMobile, currentUser }) {
   const filtered = msgs.filter(m=>m.group===group);
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:"smooth"}); },[filtered.length,group]);
-
-  // Alert on new messages from others in user's groups
-  const prevLen = useRef(msgs.length);
-  useEffect(()=>{
-    if (msgs.length > prevLen.current) {
-      const newMsgs = msgs.slice(prevLen.current);
-      const userGroups = CHAT_GROUPS.filter(g=>g.members.includes(who)).map(g=>g.id);
-      userGroups.push("all");
-      newMsgs.forEach(m=>{
-        if (m.who !== who && userGroups.includes(m.group)) {
-          // Browser notification
-          if (Notification.permission === "granted") {
-            new Notification(`💬 ${m.who}`, { body: m.text, icon: "/favicon.ico" });
-          }
-        }
-      });
-    }
-    prevLen.current = msgs.length;
-  },[msgs.length]);
-
-  // Request notification permission
-  useEffect(()=>{
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  },[]);
 
   const sendMsg = () => {
     if (!text.trim()) return;
@@ -821,12 +708,12 @@ function ChatView({ msgs, onSend, isMobile, currentUser }) {
         ))}
       </div>
       <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:12,background:"#1a1a1a",borderRadius:10,padding:"10px 14px",flexShrink:0 }}>
+        <span style={{ fontSize:12,color:"#555",fontWeight:700,whiteSpace:"nowrap" }}>I AM:</span>
+        <select value={who} onChange={e=>setWho(e.target.value)} style={{ flex:1,background:"#252525",border:"1px solid #333",borderRadius:8,color:"#eee",padding:"8px 10px",fontSize:13,outline:"none",WebkitAppearance:"none" }}>
+          {ALL_TECHS.map(t=><option key={t}>{t}</option>)}
+        </select>
         <div style={{ width:10,height:10,borderRadius:"50%",background:grp.color,flexShrink:0 }}/>
-        <span style={{ fontSize:13,color:grp.color,fontWeight:800 }}>{grp.label}</span>
-        <div style={{ marginLeft:"auto",display:"flex",alignItems:"center",gap:8,background:"#252525",borderRadius:20,padding:"4px 12px" }}>
-          <span style={{ fontSize:11,color:"#888" }}>Messaging as</span>
-          <span style={{ fontSize:13,color:"#fff",fontWeight:800 }}>{who}</span>
-        </div>
+        <span style={{ fontSize:12,color:grp.color,fontWeight:800,whiteSpace:"nowrap" }}>{grp.label}</span>
       </div>
       <div style={{ flex:1,overflowY:"auto",padding:"4px 0",minHeight:0 }}>
         {filtered.length===0?(
@@ -975,10 +862,8 @@ function App() {
   const sortedV = arr => [...arr].sort((a,b)=>{ const o={hot:0,wait:1,high:2,normal:3}; return (o[a.priority]||3)-(o[b.priority]||3); });
   const filtered = shop => vehicles
     .filter(v=>v.shop===shop)
-    .filter(v=>!v.isClosed)
     .filter(v=>fTech==="All"||v.tech===fTech)
     .filter(v=>fPriority==="All"||v.priority===fPriority||(fPriority==="hot"&&(v.priority==="hot"||v.priority==="wait")));
-  const closedVehicles = vehicles.filter(v=>v.isClosed);
 
   const mc = MECH_STATUSES.reduce((a,s)=>({...a,[s.id]:filtered("mech").filter(v=>v.status===s.id)}),{});
   const bc = BODY_STATUSES.reduce((a,s)=>({...a,[s.id]:filtered("body").filter(v=>v.status===s.id)}),{});
@@ -995,95 +880,6 @@ function App() {
   const navigate = t => {
     if (t==="hot") { setTab("all"); setFPriority("hot"); }
     else { setTab(t); setFPriority("All"); }
-  };
-
-  const importSheet = async () => {
-    if (!confirm("This will import all vehicles from your original Google Sheet. Continue?")) return;
-    const SHEET_DATA = [
-      {customer:"Lang, Bailey",year:"2021",make:"VW",model:"Atlas",roMain:"3022",roMech:"5056",roBody:"3022",shop:"body",status:"estimate",dateIn:"2025-09-09",priority:"high",isFleet:false,fleetNum:"",notes:"VEHICLE DONE W/ REPAIRS. CUSTOMER DOES NOT HAVE MONEY — ON HOLD"},
-      {customer:"SKYMAST #8",year:"2021",make:"GMC",model:"Sierra 1500",roMain:"240339",roMech:"",roBody:"240339",shop:"body",status:"teardown",dateIn:"2024-04-29",priority:"high",isFleet:true,fleetNum:"8",notes:"TEARDOWN - NEEDS QUOTE FIRST. HOLD?"},
-      {customer:"BRIAN KARDOS",year:"2008",make:"Cadillac",model:"CTS",roMain:"240533",roMech:"",roBody:"240533",shop:"body",status:"body-work",dateIn:"2024-07-22",priority:"normal",isFleet:false,fleetNum:"",notes:"NEEDS ENGINE CRADLE FOR WHITE CADDI IN SHOP"},
-      {customer:"SKYMAST #59",year:"2021",make:"GMC",model:"Sierra",roMain:"250074",roMech:"",roBody:"250074",shop:"body",status:"assembly",dateIn:"2025-02-11",priority:"normal",isFleet:true,fleetNum:"59",notes:"GRILLE AND BUMPER REPLACED"},
-      {customer:"DARRELL HOWARD",year:"1993",make:"Ford",model:"F-150",roMain:"250083",roMech:"2267",roBody:"250083",shop:"body",status:"body-work",dateIn:"2025-02-15",priority:"normal",isFleet:false,fleetNum:"",notes:"A LOT OF WORK STILL NEEDED"},
-      {customer:"SKYMAST #63",year:"2022",make:"GMC",model:"Sierra",roMain:"250096",roMech:"",roBody:"250096",shop:"body",status:"body-work",dateIn:"2025-02-25",priority:"normal",isFleet:true,fleetNum:"63",notes:"BEDLINER AND BED CAMPER"},
-      {customer:"SKYMAST #66",year:"2016",make:"GMC",model:"Sierra",roMain:"250106",roMech:"1692",roBody:"250106",shop:"body",status:"body-work",dateIn:"2025-02-28",priority:"normal",isFleet:true,fleetNum:"66",notes:"FRONT BUMPER BLACK PIECE FALLING OFF"},
-      {customer:"CURTIS HUSFELD",year:"2003",make:"Chevrolet",model:"Suburban",roMain:"250172",roMech:"2067",roBody:"250172",shop:"body",status:"body-work",dateIn:"2025-03-27",priority:"normal",isFleet:false,fleetNum:"",notes:"BATTERY DRAIN / POWER COAT ROOF RACK / FIX RADIO NOISE"},
-      {customer:"SKYMAST #71",year:"2020",make:"GMC",model:"Sierra",roMain:"250195",roMech:"",roBody:"250195",shop:"body",status:"estimate",dateIn:"2025-04-10",priority:"normal",isFleet:true,fleetNum:"71",notes:"PASSENGER SIDE DENT ON BED - MIGHT BE INSURANCE"},
-      {customer:"EQUIPMENT DEPOT #26",year:"2023",make:"Ford",model:"Transit 350HD",roMain:"250327",roMech:"",roBody:"250327",shop:"body",status:"body-work",dateIn:"2025-06-12",priority:"normal",isFleet:true,fleetNum:"26",notes:"REAR DAMAGE - ALLSTATE APPROVED 8/5/2025"},
-      {customer:"NATALIE GONZALEZ",year:"2022",make:"Ford",model:"Mustang",roMain:"250381",roMech:"",roBody:"250381",shop:"body",status:"estimate",dateIn:"2025-07-07",priority:"high",isFleet:false,fleetNum:"",notes:"HOOD GONE / ON HOLD - NEED $3000 BEFORE STARTING"},
-      {customer:"SKYMAST #97",year:"2022",make:"GMC",model:"Sierra",roMain:"250407",roMech:"",roBody:"250407",shop:"body",status:"body-work",dateIn:"2025-07-17",priority:"normal",isFleet:true,fleetNum:"97",notes:"REAR BACK WINDOW MISSING"},
-      {customer:"EQUIPMENT DEPOT #27",year:"2024",make:"Ford",model:"Transit 350HD",roMain:"250431",roMech:"",roBody:"250431",shop:"body",status:"body-work",dateIn:"2025-07-31",priority:"normal",isFleet:true,fleetNum:"27",notes:"FRED LOYA INS #78-527581"},
-      {customer:"SKYMAST #108",year:"2017",make:"Dodge",model:"Ram",roMain:"250611",roMech:"",roBody:"250611",shop:"body",status:"body-work",dateIn:"2025-10-22",priority:"normal",isFleet:true,fleetNum:"108",notes:"REPLACE FRONT BUMPER"},
-      {customer:"MATT HOSEIN",year:"2015",make:"Chevrolet",model:"Sonic",roMain:"",roMech:"",roBody:"",shop:"body",status:"estimate",dateIn:"2025-11-24",priority:"normal",isFleet:false,fleetNum:"",notes:"FRONT RIGHT DAMAGE"},
-      {customer:"SKYMAST #112",year:"2025",make:"Ram",model:"Lonestar",roMain:"250695",roMech:"",roBody:"250695",shop:"body",status:"body-work",dateIn:"2025-12-15",priority:"normal",isFleet:true,fleetNum:"112",notes:"RIGHT BED SIDE. PDR"},
-      {customer:"STACY BOWEN",year:"2023",make:"BMW",model:"M340i",roMain:"250698",roMech:"",roBody:"250698",shop:"body",status:"body-work",dateIn:"2025-12-16",priority:"normal",isFleet:false,fleetNum:"",notes:"REAR END DAMAGE"},
-      {customer:"ALEX JARR",year:"2015",make:"Honda",model:"Accord",roMain:"260097",roMech:"",roBody:"260097",shop:"body",status:"estimate",dateIn:"2026-03-02",priority:"normal",isFleet:false,fleetNum:"",notes:"DRIVER SIDE DAMAGE - ALLSTATE INS"},
-      {customer:"CHRIS FROM CARQUEST",year:"2018",make:"Ford",model:"Mustang",roMain:"260111",roMech:"",roBody:"260111",shop:"body",status:"paint",dateIn:"2026-03-06",priority:"normal",isFleet:false,fleetNum:"",notes:"PAINT JOB"},
-      {customer:"JUAN DANIEL FUENTES",year:"2021",make:"Chevrolet",model:"Colorado",roMain:"260115",roMech:"",roBody:"260115",shop:"body",status:"estimate",dateIn:"2026-03-09",priority:"normal",isFleet:false,fleetNum:"",notes:"LEFT SIDE DAMAGE"},
-      {customer:"EVELYN LARA",year:"2014",make:"Lexus",model:"ES350",roMain:"260120",roMech:"",roBody:"260120",shop:"body",status:"estimate",dateIn:"2026-03-11",priority:"normal",isFleet:false,fleetNum:"",notes:"REAR RIGHT DAMAGE"},
-      {customer:"ALISON MONTES",year:"2021",make:"Mazda",model:"CX-5",roMain:"260128",roMech:"",roBody:"260128",shop:"body",status:"estimate",dateIn:"2026-03-17",priority:"normal",isFleet:false,fleetNum:"",notes:"USAA INS"},
-      {customer:"ADRIANA ARZOLA",year:"2020",make:"Mazda",model:"CX-5",roMain:"260130",roMech:"",roBody:"260130",shop:"body",status:"estimate",dateIn:"2026-03-17",priority:"normal",isFleet:false,fleetNum:"",notes:"FRONT END DAMAGE"},
-      {customer:"RELIANT PEST MGMT #2",year:"2017",make:"Toyota",model:"Tacoma",roMain:"260131",roMech:"",roBody:"260131",shop:"body",status:"estimate",dateIn:"2026-03-17",priority:"normal",isFleet:true,fleetNum:"2",notes:"LEFT AND RIGHT REAR SIDE - USAA CLAIM"},
-      {customer:"H-TOWN STEAM - GLORIA",year:"2025",make:"Hyundai",model:"Santa Fe",roMain:"260133",roMech:"",roBody:"260133",shop:"body",status:"estimate",dateIn:"2026-03-17",priority:"normal",isFleet:true,fleetNum:"",notes:"LEFT SIDE FENDER"},
-      {customer:"DANNY PEREZ MAJUL",year:"2017",make:"Cadillac",model:"XT-5",roMain:"260134",roMech:"",roBody:"260134",shop:"body",status:"estimate",dateIn:"2026-03-18",priority:"normal",isFleet:false,fleetNum:"",notes:"LEFT SIDE DAMAGE"},
-      {customer:"LETICIA GRIMALDO",year:"2007",make:"Chevrolet",model:"Suburban",roMain:"260135",roMech:"",roBody:"260135",shop:"body",status:"estimate",dateIn:"2026-03-18",priority:"normal",isFleet:false,fleetNum:"",notes:"LEFT REAR DAMAGE - PROGRESSIVE INS"},
-      {customer:"SKYMAST #109",year:"2021",make:"GMC",model:"Sierra",roMain:"250619",roMech:"2059",roBody:"250619",shop:"body",status:"body-work",dateIn:"2025-11-04",priority:"normal",isFleet:true,fleetNum:"109",notes:"OVERALL CHECK / DETAIL / CAMPER SWAP"},
-      {customer:"SKYMAST #110",year:"2020",make:"GMC",model:"Sierra",roMain:"250647",roMech:"2090",roBody:"250647",shop:"body",status:"body-work",dateIn:"2025-11-19",priority:"normal",isFleet:true,fleetNum:"110",notes:"BED REPLACEMENT"},
-      {customer:"ANDREW FLANAGAN",year:"2006",make:"Ford",model:"F-150",roMain:"260082",roMech:"2236",roBody:"260082",shop:"body",status:"estimate",dateIn:"2026-02-20",priority:"normal",isFleet:false,fleetNum:"",notes:"OVERALL CHECK - NEEDS APPROVAL / INTERIOR WORK"},
-      {customer:"SKYMAST #119",year:"2023",make:"Ram",model:"1500",roMain:"260092",roMech:"2263",roBody:"260092",shop:"body",status:"estimate",dateIn:"2026-02-25",priority:"normal",isFleet:true,fleetNum:"119",notes:"CHECK ENGINE LIGHT / BODY REPAIRS"},
-      {customer:"BRIAN ALTMAN",year:"2018",make:"Buick",model:"Enclave",roMain:"260114",roMech:"2262",roBody:"260114",shop:"body",status:"estimate",dateIn:"2026-03-09",priority:"normal",isFleet:false,fleetNum:"",notes:"MAKES SOUND / $280"},
-      {customer:"LOYALTY PLUMBING #130",year:"2016",make:"Ford",model:"Transit",roMain:"260099",roMech:"2250",roBody:"260099",shop:"body",status:"estimate",dateIn:"2026-03-02",priority:"normal",isFleet:true,fleetNum:"130",notes:"OIL CHANGE / CEL / REAR GATE LATCH"},
-      {customer:"H-TOWN STEAM",year:"2018",make:"Ford",model:"Transit",roMain:"260142",roMech:"2276",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-19",priority:"normal",isFleet:true,fleetNum:"",notes:"STALLING PROBLEM"},
-      {customer:"CAVALIER",year:"2020",make:"Isuzu",model:"NPR",roMain:"260140",roMech:"2275",roBody:"",shop:"mech",status:"write-up",dateIn:"2026-03-19",priority:"normal",isFleet:true,fleetNum:"",notes:""},
-      {customer:"RAMIREZ PAINTING",year:"2013",make:"Ford",model:"E-150",roMain:"260138",roMech:"2274",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-19",priority:"normal",isFleet:true,fleetNum:"",notes:"TOWED IN - DOES NOT TURN ON"},
-      {customer:"BOBBY TALBOTT",year:"2017",make:"Dodge",model:"Ram 1500",roMain:"260137",roMech:"2273",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-19",priority:"normal",isFleet:false,fleetNum:"",notes:"WATER PUMP / HOT COOLANT / CHECK SERPENTINE BELT"},
-      {customer:"NATRAN GREEN PEST #91",year:"2022",make:"Toyota",model:"Tacoma",roMain:"260136",roMech:"2272",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-03-18",priority:"normal",isFleet:true,fleetNum:"91",notes:"FRONT BRAKE JOB"},
-      {customer:"H-TOWN STEAM",year:"2016",make:"Ford",model:"Transit",roMain:"260132",roMech:"2271",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-17",priority:"normal",isFleet:true,fleetNum:"",notes:"O2 SENSOR"},
-      {customer:"LOYALTY PLUMBING #132",year:"2017",make:"Ford",model:"Transit",roMain:"260127",roMech:"2270",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-17",priority:"normal",isFleet:true,fleetNum:"132",notes:"CHECK ENGINE LIGHT / INSPECTION"},
-      {customer:"BRODIE SIMMONS",year:"2001",make:"Ford",model:"Focus",roMain:"260126",roMech:"2269",roBody:"",shop:"mech",status:"write-up",dateIn:"2026-03-17",priority:"normal",isFleet:false,fleetNum:"",notes:"JUST BOUGHT CAR - OVERALL CHECK"},
-      {customer:"EQUIPMENT DEPOT #31",year:"2021",make:"Ford",model:"Transit",roMain:"260125",roMech:"2268",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-03-16",priority:"normal",isFleet:true,fleetNum:"31",notes:"BRAKES / TIRE LOW / PULLS RIGHT / BATTERY"},
-      {customer:"CROSSWAY MECHANICAL #48",year:"2020",make:"Isuzu",model:"NPR",roMain:"260119",roMech:"2261",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-10",priority:"normal",isFleet:true,fleetNum:"48",notes:"CHECK ENGINE LIGHT / NO POWER"},
-      {customer:"EQUIPMENT DEPOT #30",year:"2022",make:"Chevrolet",model:"Silverado",roMain:"260112",roMech:"2257",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-03-06",priority:"normal",isFleet:true,fleetNum:"30",notes:"OVERALL CHECK / BRAKE LIGHT ERROR / SHOCKS"},
-      {customer:"LOYALTY PLUMBING #131",year:"2018",make:"Ford",model:"Transit",roMain:"260110",roMech:"2256",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-03-06",priority:"normal",isFleet:true,fleetNum:"131",notes:"SMELLS LIKE GAS / CHECK TRANSMISSION"},
-      {customer:"EQUIPMENT DEPOT #29",year:"2023",make:"Ford",model:"Transit",roMain:"260100",roMech:"2251",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-03-03",priority:"normal",isFleet:true,fleetNum:"29",notes:"OVERALL CHECK - MAKE SURE ROAD WORTHY"},
-      {customer:"SUZANE WOOLERY",year:"2012",make:"Cadillac",model:"SRX",roMain:"260098",roMech:"2249",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-03-02",priority:"normal",isFleet:false,fleetNum:"",notes:"ALIGN STEERING WHEEL / CHECK BRAKES"},
-      {customer:"LOYALTY PLUMBING #129",year:"2023",make:"Ram",model:"ProMaster",roMain:"260090",roMech:"2242",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-02-25",priority:"normal",isFleet:true,fleetNum:"129",notes:"BRAKES - NEED BEFORE 12PM"},
-      {customer:"LOYALTY PLUMBING #127",year:"2022",make:"Ford",model:"Transit",roMain:"260073",roMech:"2226",roBody:"",shop:"mech",status:"ready",dateIn:"2026-02-16",priority:"normal",isFleet:true,fleetNum:"127",notes:"OIL CHANGE"},
-      {customer:"LOYALTY PLUMBING #126",year:"2016",make:"Ford",model:"Transit",roMain:"260072",roMech:"2225",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-02-16",priority:"normal",isFleet:true,fleetNum:"126",notes:"CHECK AC / CHECK OIL"},
-      {customer:"JOHN WOOTEN",year:"2013",make:"Volkswagen",model:"Beetle",roMain:"",roMech:"2220",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-02-12",priority:"normal",isFleet:false,fleetNum:"",notes:""},
-      {customer:"SHOP-VEHICLE",year:"1997",make:"Chevrolet",model:"S10",roMain:"",roMech:"2218",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-02-12",priority:"normal",isFleet:false,fleetNum:"",notes:"OIL CHANGE / BRAKES / DRIVER SIDE WINDOW"},
-      {customer:"LOYALTY PLUMBING #125",year:"2017",make:"Ford",model:"Transit",roMain:"260062",roMech:"2213",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-02-10",priority:"normal",isFleet:true,fleetNum:"125",notes:"OIL CHANGE / CHECK AC / CEL / STATE INSPECTION"},
-      {customer:"LOYALTY PLUMBING #124",year:"2017",make:"Ford",model:"E-350",roMain:"260060",roMech:"2240",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2026-02-09",priority:"normal",isFleet:true,fleetNum:"124",notes:"DEAD / CEL / ROOF LEAK"},
-      {customer:"SKYMAST #117",year:"2022",make:"GMC",model:"Sierra",roMain:"260031",roMech:"2189",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-01-21",priority:"normal",isFleet:true,fleetNum:"117",notes:"OVERALL CHECK / 10 POINT INS"},
-      {customer:"CONTINENTAL PLUMBING",year:"2015",make:"Mercedes-Benz",model:"Sprinter",roMain:"260037",roMech:"2181",roBody:"",shop:"mech",status:"in-progress",dateIn:"2026-01-22",priority:"normal",isFleet:true,fleetNum:"",notes:""},
-      {customer:"SKYMAST #116",year:"2020",make:"GMC",model:"Sierra",roMain:"250716",roMech:"2153",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-12-27",priority:"normal",isFleet:true,fleetNum:"116",notes:"TIRE PRESSURE / STORAGE AFTER"},
-      {customer:"SKYMAST #115",year:"2021",make:"GMC",model:"Sierra",roMain:"250715",roMech:"2152",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-12-27",priority:"normal",isFleet:true,fleetNum:"115",notes:"TIRE PRESSURE / STORAGE AFTER"},
-      {customer:"SKYMAST #114",year:"2021",make:"GMC",model:"Sierra",roMain:"250714",roMech:"2151",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-12-24",priority:"normal",isFleet:true,fleetNum:"114",notes:"OVERALL CHECK / STORAGE AFTER"},
-      {customer:"SKYMAST #113",year:"2021",make:"GMC",model:"Sierra",roMain:"250713",roMech:"2147",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-12-24",priority:"normal",isFleet:true,fleetNum:"113",notes:"OVERALL CHECK / STORAGE AFTER"},
-      {customer:"ROBERTO RAMIREZ",year:"2008",make:"Nissan",model:"Altima",roMain:"250703",roMech:"2139",roBody:"",shop:"mech",status:"waiting-parts",dateIn:"2025-12-18",priority:"normal",isFleet:false,fleetNum:"",notes:"IDLER PULLEY BROKE OFF - TOWED IN"},
-      {customer:"NATRAN GREEN PEST #89",year:"2018",make:"Toyota",model:"Tacoma",roMain:"250683",roMech:"2126",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2025-12-10",priority:"normal",isFleet:true,fleetNum:"89",notes:"CRANKS BUT WON'T START / BATTERY?"},
-      {customer:"ROBYN CONLEY",year:"2014",make:"Ford",model:"Fusion",roMain:"250678",roMech:"2248",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2025-12-10",priority:"normal",isFleet:false,fleetNum:"",notes:"DEAD - DOES NOT TURN ON"},
-      {customer:"NATRAN GREEN PEST #88",year:"2021",make:"Toyota",model:"Tacoma",roMain:"250677",roMech:"2119",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2025-12-09",priority:"normal",isFleet:true,fleetNum:"88",notes:"CHECK ENGINE LIGHT / TRUCK STALLS"},
-      {customer:"CROSSWAY MECHANICAL #45",year:"2013",make:"Ford",model:"F-250",roMain:"250625",roMech:"2101",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-12-02",priority:"normal",isFleet:true,fleetNum:"45",notes:"STILL LEAKING OIL"},
-      {customer:"SHOP-VEHICLE",year:"2004",make:"Toyota",model:"Corolla",roMain:"",roMech:"2086",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-11-19",priority:"normal",isFleet:false,fleetNum:"",notes:"FIX CEL - NEEDS TO PASS INSPECTION"},
-      {customer:"LOYALTY PLUMBING #102",year:"2017",make:"Ford",model:"E-350",roMain:"250626",roMech:"2049",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-11-06",priority:"normal",isFleet:true,fleetNum:"102",notes:"REPLACE CATALYTIC CONVERTER"},
-      {customer:"CROSSWAY MECHANICAL #45B",year:"2013",make:"Ford",model:"F-350",roMain:"250625",roMech:"2063",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-11-06",priority:"normal",isFleet:true,fleetNum:"45",notes:"OIL CHANGE"},
-      {customer:"LOYALTY PLUMBING #101",year:"2018",make:"Ford",model:"Transit",roMain:"250622",roMech:"2062",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-11-05",priority:"normal",isFleet:true,fleetNum:"101",notes:"OIL CHANGE / BELT MAKING SOUND"},
-      {customer:"CROSSWAY MECHANICAL #44",year:"2020",make:"Ford",model:"F-250",roMain:"250620",roMech:"2058",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-11-04",priority:"normal",isFleet:true,fleetNum:"44",notes:"CEL (GAS CAP) / RADIATOR LEAK"},
-      {customer:"NATRAN GREEN PEST #85",year:"2021",make:"Toyota",model:"Tacoma",roMain:"250608",roMech:"2053",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2025-10-30",priority:"normal",isFleet:true,fleetNum:"85",notes:"TOWED IN / CHECK ENGINE LIGHT"},
-      {customer:"CROSSWAY MECHANICAL #42",year:"2020",make:"Ford",model:"Transit 150",roMain:"250596",roMech:"2044",roBody:"",shop:"mech",status:"diagnosis",dateIn:"2025-10-27",priority:"normal",isFleet:true,fleetNum:"42",notes:"SHAKES / CEL / INSPECTION"},
-      {customer:"SKYMAST #107",year:"2020",make:"GMC",model:"Sierra",roMain:"250584",roMech:"2032",roBody:"",shop:"mech",status:"qc",dateIn:"2025-10-20",priority:"normal",isFleet:true,fleetNum:"107",notes:"10 POINT INSPECTION"},
-      {customer:"DEDRIC MOLDIN",year:"2018",make:"Hyundai",model:"Santa Fe",roMain:"250331",roMech:"1841",roBody:"",shop:"mech",status:"in-progress",dateIn:"2025-06-13",priority:"normal",isFleet:false,fleetNum:"",notes:"DID NOT PASS INSPECTION"},
-    ];
-    const newVehicles = SHEET_DATA.map((v,i) => ({
-      ...v, id:uid()+i, createdAt:Date.now(),
-      parts:"na", partsNote:"", promiseDate:"", roQB:"", log:[], isClosed:false
-    }));
-    const existing = vehicles.filter(v => !SHEET_DATA.some(s => s.roMain && s.roMain === v.roMain));
-    const merged = [...existing, ...newVehicles];
-    // Save all to supabase
-    for (const v of newVehicles) { await saveOne(v); }
-    alert(\`✅ Imported \${newVehicles.length} vehicles from your Google Sheet!\`);
   };
 
   const handleLogin = (name) => { setCurrentUser(name); setUnlocked(true); };
@@ -1151,16 +947,15 @@ function App() {
           </div>
         )}
         <div style={{ padding:"14px 14px 0" }}>
-          {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={true} onNavigate={navigate} onImport={()=>importSheet()}/>}
+          {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={true} onNavigate={navigate}/>}
           {tab==="mech"&&(mV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"#444",marginBottom:20 }}>No vehicles in Mech Shop</div><button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
             :mV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
           {tab==="body"&&(bV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"#444",marginBottom:20 }}>No vehicles in Body Shop</div><button onClick={openAdd} style={{ background:"#4A90D9",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
             :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
           {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true} currentUser={currentUser}/>}
-          {tab==="closed"&&<ClosedFiles vehicles={closedVehicles} onReopen={v=>saveOne({...v,isClosed:false,closedAt:null})} onDelete={v=>deleteOne(v.id)} isMobile={true}/>}
         </div>
         <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:9999,background:"#1a1a1a",borderTop:"2px solid #333",display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
-          {[["dashboard","📊","Board"],["mech","⚙️","Mech"],["body","🔨","Body"],["closed","✅","Closed"],["chat","💬","Chat"]].map(([v,icon,label])=>(
+          {[["dashboard","📊","Board"],["mech","⚙️","Mech"],["body","🔨","Body"],["chat","💬","Chat"]].map(([v,icon,label])=>(
             <button key={v} onClick={()=>setTab(v)} style={{ flex:1,background:"transparent",border:"none",color:tab===v?"#4A90D9":"#bbb",padding:"12px 0 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",minHeight:64,touchAction:"manipulation",WebkitTapHighlightColor:"transparent" }}>
               <span style={{ fontSize:20 }}>{icon}</span>
               <span style={{ fontSize:11,fontWeight:700,color:tab===v?"#4A90D9":"#bbb" }}>{label}</span>
@@ -1199,7 +994,7 @@ function App() {
       </div>
       <div style={{ padding:"10px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #181818",background:"#141414" }}>
         <div style={{ display:"flex",gap:6 }}>
-          {[["dashboard","📊 Dashboard"],["mech","⚙️ Mech"],["body","🔨 Body"],["all","📋 All"],["closed","✅ Closed"],["chat","💬 Team Chat"]].map(([v,l])=>(
+          {[["dashboard","📊 Dashboard"],["mech","⚙️ Mech"],["body","🔨 Body"],["all","📋 All"],["chat","💬 Team Chat"]].map(([v,l])=>(
             <button key={v} onClick={()=>setTab(v)} style={{ background:tab===v?"#222":"transparent",border:`1px solid ${tab===v?"#444":"#222"}`,color:tab===v?"#fff":"#ccc",borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer" }}>{l}</button>
           ))}
         </div>
@@ -1215,9 +1010,8 @@ function App() {
         )}
       </div>
       <div style={{ padding:"18px 20px" }}>
-        {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={false} onNavigate={navigate} onImport={()=>importSheet()}/>}
+        {tab==="dashboard"&&<Dashboard vehicles={vehicles} isMobile={false} onNavigate={navigate}/>}
         {tab==="chat"&&<div style={{ maxWidth:700,margin:"0 auto" }}><ChatView msgs={msgs} onSend={sendMsg} isMobile={false} currentUser={currentUser}/></div>}
-        {tab==="closed"&&<ClosedFiles vehicles={closedVehicles} onReopen={v=>saveOne({...v,isClosed:false,closedAt:null})} onDelete={v=>deleteOne(v.id)} isMobile={false}/>}
         {(tab==="mech"||tab==="all")&&(
           <div style={{ marginBottom:30 }}>
             {tab==="all"&&<div style={{ fontSize:9,fontWeight:900,letterSpacing:2.5,color:"#4A90D9",marginBottom:10,textTransform:"uppercase" }}>⚙️ Mech Shop</div>}
