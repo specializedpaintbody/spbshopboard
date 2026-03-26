@@ -866,14 +866,14 @@ function App() {
   if (isMobile) {
     const mV=sortedV(filtered("mech")), bV=sortedV(filtered("body"));
     return (
-      <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#111",minHeight:"100vh",color:"#eee",paddingBottom:80 }}>
+      <div style={{ fontFamily:"'DM Sans','Segoe UI',sans-serif",background:"#111",minHeight:"100vh",color:"#eee",paddingBottom:100 }}>
         <div style={{ background:"#161616",borderBottom:"1px solid #1e1e1e",padding:"14px 16px 10px",paddingTop:"max(14px,env(safe-area-inset-top,14px))" }}>
           <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
             <div style={{ display:"flex",alignItems:"center",gap:10 }}>
               <img src={LOGO_SRC} alt="SPB" style={{ height:32,objectFit:"contain" }}/>
             </div>
             <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2 }}>
-              <div style={{ fontSize:11,color:"#555",display:"flex",gap:8 }}>
+              <div style={{ fontSize:12,color:"#bbb",display:"flex",gap:8 }}>
                 <span>{totM} Mech · {totB} Body</span>
                 {totH>0&&<span style={{ color:"#E74C3C" }}>🔥{totH}</span>}
                 {totOD>0&&<span style={{ color:"#E74C3C" }}>⚠️{totOD}</span>}
@@ -884,7 +884,7 @@ function App() {
         </div>
         {(tab==="mech"||tab==="body")&&(
           <div style={{ padding:"8px 14px",background:"#141414",borderBottom:"1px solid #1a1a1a",display:"flex",alignItems:"center",gap:8 }}>
-            <span style={{ fontSize:11,color:"#555",fontWeight:700 }}>TECH:</span>
+            <span style={{ fontSize:12,color:"#bbb",fontWeight:700 }}>TECH:</span>
             <select style={{ background:"#1e1e1e",border:"1px solid #2a2a2a",color:"#ccc",borderRadius:8,padding:"6px 10px",fontSize:13,flex:1 }} value={fTech} onChange={e=>setFTech(e.target.value)}>
               <option>All</option>
               {(tab==="mech"?MECH_TECHS:BODY_TECHS).map(t=><option key={t}>{t}</option>)}
@@ -899,11 +899,11 @@ function App() {
             :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
           {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true}/>}
         </div>
-        <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"#161616",borderTop:"1px solid #222",display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
+        <div style={{ position:"fixed",bottom:0,left:0,right:0,zIndex:9999,background:"#1a1a1a",borderTop:"2px solid #333",display:"flex",paddingBottom:"env(safe-area-inset-bottom,0px)" }}>
           {[["dashboard","📊","Board"],["mech","⚙️","Mech"],["body","🔨","Body"],["chat","💬","Chat"]].map(([v,icon,label])=>(
-            <button key={v} onClick={()=>setTab(v)} style={{ flex:1,background:"transparent",border:"none",color:tab===v?"#4A90D9":"#555",padding:"10px 0 8px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:"pointer" }}>
+            <button key={v} onClick={()=>setTab(v)} style={{ flex:1,background:"transparent",border:"none",color:tab===v?"#4A90D9":"#bbb",padding:"12px 0 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer",minHeight:64,touchAction:"manipulation",WebkitTapHighlightColor:"transparent" }}>
               <span style={{ fontSize:20 }}>{icon}</span>
-              <span style={{ fontSize:10,fontWeight:700,color:tab===v?"#4A90D9":"#555" }}>{label}</span>
+              <span style={{ fontSize:11,fontWeight:700,color:tab===v?"#4A90D9":"#bbb" }}>{label}</span>
             </button>
           ))}
           <button onClick={openAdd} style={{ flex:1,background:"transparent",border:"none",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer",padding:"6px 0 8px" }}>
@@ -924,7 +924,7 @@ function App() {
           <img src={LOGO_SRC} alt="SPB" style={{ height:40,objectFit:"contain" }}/>
           <div>
             <div style={{ fontSize:15,fontWeight:900,color:"#fff" }}>Shop Production Board</div>
-            <div style={{ fontSize:11,color:"#555",marginTop:1 }}>{totM} Mech · {totB} Body · {totM+totB} Total{totH>0?` · 🔥 ${totH} Hot`:""}{totOD>0?` · ⚠️ ${totOD} Overdue`:""}</div>
+            <div style={{ fontSize:12,color:"#bbb",marginTop:1 }}>{totM} Mech · {totB} Body · {totM+totB} Total{totH>0?` · 🔥 ${totH} Hot`:""}{totOD>0?` · ⚠️ ${totOD} Overdue`:""}</div>
           </div>
         </div>
         <div style={{ display:"flex",alignItems:"center",gap:14 }}>
@@ -935,12 +935,12 @@ function App() {
       <div style={{ padding:"10px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #181818",background:"#141414" }}>
         <div style={{ display:"flex",gap:6 }}>
           {[["dashboard","📊 Dashboard"],["mech","⚙️ Mech"],["body","🔨 Body"],["all","📋 All"],["chat","💬 Team Chat"]].map(([v,l])=>(
-            <button key={v} onClick={()=>setTab(v)} style={{ background:tab===v?"#222":"transparent",border:`1px solid ${tab===v?"#444":"#222"}`,color:tab===v?"#fff":"#666",borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer" }}>{l}</button>
+            <button key={v} onClick={()=>setTab(v)} style={{ background:tab===v?"#222":"transparent",border:`1px solid ${tab===v?"#444":"#222"}`,color:tab===v?"#fff":"#ccc",borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer" }}>{l}</button>
           ))}
         </div>
         {tab!=="dashboard"&&tab!=="chat"&&(
           <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-            <span style={{ fontSize:10,color:"#444",fontWeight:700 }}>TECH:</span>
+            <span style={{ fontSize:12,color:"#bbb",fontWeight:700 }}>TECH:</span>
             <select style={{ background:"#1e1e1e",border:"1px solid #2a2a2a",color:"#ccc",borderRadius:6,padding:"4px 8px",fontSize:12 }} value={fTech} onChange={e=>setFTech(e.target.value)}>
               <option>All</option>
               {ALL_TECHS.map(t=><option key={t}>{t}</option>)}
