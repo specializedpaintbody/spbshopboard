@@ -450,7 +450,7 @@ function DesktopCard({ v, statuses, onEdit, onDelete, onStatus, onNote, onPhotos
         <button style={{ background:"var(--bg4)",border:"none",color:"var(--text3)",borderRadius:4,padding:"3px 8px",fontSize:13,cursor:"pointer" }} disabled={idx===statuses.length-1} onClick={()=>onStatus(statuses[idx+1].id)}>›</button>
       </div>
       {showNote&&<QuickNote v={v} onSave={log=>{onNote(log);setShowNote(false);}} onClose={()=>setShowNote(false)}/>}
-      {showPhotos&&<VehiclePhotos v={v} isMobile={false} onSave={photos=>{onPhotos(photos);}} onClose={()=>setShowPhotos(false)}/>}
+      {showPhotos&&<VehiclePhotos v={v} isMobile={false} onSave={photos=>{onPhotos(photos);setShowPhotos(false);}} onClose={()=>setShowPhotos(false)}/>}
     </div>
   );
 }
@@ -571,18 +571,16 @@ function CCCOneImport({ onImport, onClose, isMobile }) {
   const fileRef = useRef(null);
 
   const parseCSV = (text) => {
-    const lines = text.trim().split(/
-?
-/);
+    const dq = String.fromCharCode(34);
+    const lines = text.replace(/\r/g, "").trim().split("\n");
     if (lines.length < 2) { setErr("File appears empty"); return; }
-    const headers = lines[0].split(",").map(h=>h.replace(/"/g,"").trim().toLowerCase());
+    const headers = lines[0].split(",").map(function(h){ return h.split(dq).join("").trim().toLowerCase(); });
     const parsed = [];
     for (let i=1;i<lines.length;i++) {
-      const cols = lines[i].split(",").map(c=>c.replace(/"/g,"").trim());
+      const cols = lines[i].split(",").map(function(c){ return c.split(dq).join("").trim(); });
       if (cols.length < 3) continue;
       const row = {};
-      headers.forEach((h,idx)=>{ row[h]=cols[idx]||""; });
-      // Map CCC ONE fields to our fields
+      headers.forEach(function(h,idx){ row[h]=cols[idx]||""; });
       const mapped = {
         roMain: row["ro number"]||row["ro#"]||row["ro"]||row["repair order"]||row["claim number"]||"",
         roBody: row["ro number"]||row["ro#"]||row["ro"]||row["claim number"]||"",
@@ -590,43 +588,30 @@ function CCCOneImport({ onImport, onClose, isMobile }) {
         year: row["year"]||row["vehicle year"]||"",
         make: row["make"]||row["vehicle make"]||"",
         model: row["model"]||row["vehicle model"]||"",
-        vin: row["vin"]||row["vin number"]||"",
-        dateIn: row["date in"]||row["date received"]||row["arrival date"]||"",
-        notes: [row["notes"]||"", row["description"]||"", row["vin"]?"VIN: "+(row["vin"]||row["vin number"]||""):""].filter(Boolean).join(" | "),
-        shop: "body",
-        status: "estimate",
-        priority: "normal",
-        isFleet: false,
-        fleetNum: "",
-        parts: "na",
-        partsNote: "",
-        promiseDate: "",
-        roMech: "",
-        roQB: "",
-        log: [],
-        isClosed: false,
+        notes: [row["notes"]||"",row["description"]||"",row["vin"]?"VIN: "+row["vin"]:""].filter(Boolean).join(" | "),
+        shop: "body", status: "estimate", priority: "normal",
+        isFleet: false, fleetNum: "", parts: "na", partsNote: "",
+        promiseDate: "", roMech: "", roQB: "", log: [], isClosed: false,
       };
-      if (mapped.customer.trim()||mapped.roMain||mapped.vin) parsed.push(mapped);
+      if (mapped.customer.trim()||mapped.roMain) parsed.push(mapped);
     }
-    if (parsed.length===0) {
-      setErr("No vehicles found. Make sure you exported from CCC ONE as CSV.");
-      return;
-    }
-    setRows(parsed);
-    setStep("preview");
-    setErr("");
+    if (parsed.length===0) { setErr("No vehicles found. Export as CSV from CCC ONE."); return; }
+    setRows(parsed); setStep("preview"); setErr("");
   };
 
   const handleFile = async (file) => {
     if (!file) return;
-    if (!file.name.match(/\.(csv|txt)$/i)) { setErr("Please upload a .csv file from CCC ONE"); return; }
+    var fname = file.name.toLowerCase();
+    if (!fname.endsWith(".csv") && !fname.endsWith(".txt")) {
+      setErr("Please upload a .csv file exported from CCC ONE");
+      return;
+    }
     setLoading(true);
-    const text = await file.text();
+    var text = await file.text();
     parseCSV(text);
     setLoading(false);
   };
-
-  const doImport = async () => {
+    const doImport = async () => {
     setLoading(true);
     let count = 0;
     for (const r of rows) {
@@ -1381,7 +1366,7 @@ function App() {
           {tab==="mech"&&(mV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"var(--text3)",marginBottom:20 }}>No vehicles in Mech Shop</div><button onClick={openAdd} style={{ background:"var(--blue)",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
             :mV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)} onPhotos={photos=>saveOne({...v,photos})}/>))}
           {tab==="body"&&(bV.length===0?<div style={{ textAlign:"center",padding:"60px 20px" }}><div style={{ fontSize:40,marginBottom:12 }}>🚗</div><div style={{ fontSize:15,color:"var(--text3)",marginBottom:20 }}>No vehicles in Body Shop</div><button onClick={openAdd} style={{ background:"var(--blue)",color:"#fff",border:"none",borderRadius:12,padding:"13px 28px",fontSize:15,fontWeight:800,cursor:"pointer" }}>+ Add First Vehicle</button></div>
-            :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)}/>))}
+            :bV.map(v=><MobileCard key={v.id} v={v} onEdit={()=>setModal(v)} onDelete={()=>del(v.id)} onStatus={s=>onStatus(v.id,s)} onNote={log=>onNote(v.id,log)} onPhotos={photos=>saveOne({...v,photos})}/>))}
           {tab==="chat"&&<ChatView msgs={msgs} onSend={sendMsg} isMobile={true} currentUser={currentUser}/>}
           {tab==="closed"&&<ClosedFiles vehicles={closedVehicles} onReopen={v=>saveOne({...v,isClosed:false})} onDelete={v=>deleteOne(v.id)} isMobile={true} onImport={importSheet} onCCC={()=>setShowCCC(true)}/>}
           {showCCC&&<CCCOneImport isMobile={true} onImport={async v=>await saveOne(v)} onClose={()=>setShowCCC(false)}/>}
